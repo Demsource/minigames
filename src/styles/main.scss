@@ -10,8 +10,10 @@ body {
 }
 
 .page-container {
-  padding: $size-4;
+  max-width: $breakpoint-desktop;
+  width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 
   h1 {
     font-size: $headline-large;
