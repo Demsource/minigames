@@ -55,8 +55,19 @@
         </button>
       </div>
     </div>
-  `;let n=e.querySelector(`#login-btn`),r=e.querySelector(`#signup-btn`);n?.addEventListener(`click`,a),r?.addEventListener(`click`,a);let o=new i;return document.body.append(o.getElement()),e.querySelector(`.burger-toggle`)?.addEventListener(`click`,()=>o.open()),e}function s(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e}function c(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
+  `;let n=e.querySelector(`#login-btn`),r=e.querySelector(`#signup-btn`);n?.addEventListener(`click`,a),r?.addEventListener(`click`,a);let o=new i;return document.body.append(o.getElement()),e.querySelector(`.burger-toggle`)?.addEventListener(`click`,()=>o.open()),e}function s(){let e=document.createElement(`section`);return e.className=`hero-section`,e.innerHTML=`
+    <div class="hero-container">
+      <div class="hero-card">
+        <h1>Take a Short Break<br>& Have Fun</h1>
+        <p>
+          <span class="desktop-text">Discover hundreds of curated casual mini-games. Play instantly in your browser — puzzle, match 3, farm, and board classics.</span>
+          <span class="mobile-text">Discover hundreds of curated casual mini-games right in your browser.</span>
+        </p>
+        <button type="button" class="btn-browse">Browse Library</button>
+      </div>
+    </div>
+  `,e}function c(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e}function l(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
     <h1>Library Page</h1>
     <p>Explore your game library here.</p>
     <a href="/" data-link class="nav-link">Go Home</a>
-  `,e}var l=document.querySelector(`#app`);if(l){let t=new e(l,`/minigames`);t.addRoute(`/`,s),t.addRoute(`/library`,c),t.handleRoute()}
+  `,e}var u=document.querySelector(`#app`);if(u){let t=new e(u,`/minigames`);t.addRoute(`/`,c),t.addRoute(`/library`,l),t.handleRoute()}
