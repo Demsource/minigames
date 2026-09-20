@@ -1,2 +1,50 @@
 @use 'tokens' as *;
 @use 'globals' as *;
+
+body {
+  background-color: $bg;
+  color: $on-bg;
+  font-family: $font-inter;
+  margin: 0;
+  padding: 0;
+}
+
+.page-container {
+  padding: $size-4;
+  margin: 0 auto;
+
+  h1 {
+    font-size: $headline-large;
+    font-weight: $bold;
+    color: $on-primary;
+  }
+
+  p {
+    font-size: $body-large;
+    color: $on-bg-low;
+  }
+
+  .nav-link {
+    display: inline-block;
+    margin-top: $size-2;
+    padding: $btn-medium;
+    background-color: $primary;
+    color: $on-primary;
+    border-radius: $corner-small;
+    text-decoration: none;
+    font-weight: $medium;
+    box-shadow: $level-1;
+    transition: transform 0.1s ease;
+
+    &:hover {
+      background-color: $primary-high;
+      transform: translate(-2px, -2px);
+      box-shadow: $level-2;
+    }
+  }
+}
+
+.not-found {
+  text-align: center;
+  padding: $size-10;
+}

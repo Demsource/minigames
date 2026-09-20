@@ -4,6 +4,11 @@ import prettierPlugin from 'eslint-plugin-prettier/recommended';
 import unicorn from 'eslint-plugin-unicorn';
 
 export default tseslint.config(
+  // Global ignores
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
+  // Plugin configs and rules
   js.configs.recommended,
   ...tseslint.configs.recommended,
   unicorn.configs.recommended,
