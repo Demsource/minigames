@@ -18,6 +18,11 @@
   &.is-open {
     opacity: 1;
     pointer-events: auto;
+
+    .auth-dialog {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 }
 
@@ -33,6 +38,12 @@
   position: relative;
   box-shadow: $level-3;
   font-family: $font-inter;
+
+  transform: scale(0.95);
+  opacity: 0;
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
 
   @media (max-width: $breakpoint-mobile) {
     padding: $size-6;

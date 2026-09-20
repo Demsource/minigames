@@ -145,6 +145,15 @@ class AuthDialogClass {
 
     toggleRegisterButton?.addEventListener('click', showRegister);
     switchRegisterLink?.addEventListener('click', showRegister);
+
+    document.addEventListener('keydown', (event) => {
+      if (
+        event.key === 'Escape' &&
+        this.backdrop.classList.contains('is-open')
+      ) {
+        this.close();
+      }
+    });
   }
 
   public open() {
