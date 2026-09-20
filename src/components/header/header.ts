@@ -1,10 +1,6 @@
 import logoUrl from '../../assets/icons/logo-minigames.svg';
 import { BurgerMenu } from './burger-menu/burger-menu';
-
-const openAuthPlaceholder = (event: Event) => {
-  event.preventDefault();
-  alert('Auth dialog will be built later!');
-};
+import { AuthDialog } from '../dialogs/auth-dialog';
 
 export function Header(): HTMLElement {
   const headerElement = document.createElement('header');
@@ -43,8 +39,14 @@ export function Header(): HTMLElement {
   const loginButton = headerElement.querySelector('#login-btn');
   const signupButton = headerElement.querySelector('#signup-btn');
 
-  loginButton?.addEventListener('click', openAuthPlaceholder);
-  signupButton?.addEventListener('click', openAuthPlaceholder);
+  loginButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    AuthDialog.open();
+  });
+  signupButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    AuthDialog.open();
+  });
 
   const burgerMenu = new BurgerMenu();
   document.body.append(burgerMenu.getElement());

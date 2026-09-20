@@ -1,0 +1,248 @@
+@use '../../styles/tokens' as *;
+
+.auth-dialog-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.auth-dialog {
+  background-color: $bg;
+  border: 4px solid $on-primary;
+  border-radius: $corner-extra-large;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: $size-8;
+  position: relative;
+  box-shadow: $level-3;
+  font-family: $font-inter;
+
+  @media (max-width: $breakpoint-mobile) {
+    padding: $size-6;
+    max-width: 90%;
+  }
+
+  .auth-toggle {
+    display: flex;
+    background-color: $white;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    margin-bottom: $size-8;
+    overflow: hidden;
+
+    button {
+      flex: 1;
+      padding: $size-3 0;
+      font-size: $label-large;
+      font-weight: $bold;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: $on-bg-low;
+      transition: all 0.2s;
+      font-family: $font-inter;
+
+      &.active {
+        background-color: $on-primary;
+        color: $white;
+      }
+    }
+  }
+
+  h2 {
+    font-size: $headline-large;
+    color: $on-primary;
+    margin-top: 0;
+    margin-bottom: $size-2;
+    font-weight: $extra-bold;
+  }
+
+  .subtitle {
+    color: $on-bg-low;
+    font-size: $body-medium;
+    margin-top: 0;
+    margin-bottom: $size-6;
+  }
+
+  .form-group {
+    margin-bottom: $size-4;
+    display: flex;
+    flex-direction: column;
+
+    label {
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+      margin-bottom: $size-2;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .icon-left {
+        position: absolute;
+        left: $size-3;
+        width: 20px;
+        height: 20px;
+      }
+
+      .icon-right {
+        position: absolute;
+        right: $size-3;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      input {
+        width: 100%;
+        padding: $size-3 $size-10;
+        border: 2px solid $on-primary;
+        border-radius: $corner-small;
+        font-size: $body-medium;
+        outline: none;
+        transition: border-color 0.2s;
+        font-family: $font-inter;
+
+        &:focus {
+          border-color: $primary;
+        }
+
+        &::placeholder {
+          color: $on-bg-low;
+        }
+      }
+    }
+  }
+
+  .forgot-password {
+    display: block;
+    text-align: right;
+    font-size: $label-large;
+    font-weight: $bold;
+    color: $on-primary;
+    text-decoration: underline;
+    margin-bottom: $size-6;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background-color: $primary;
+    color: $on-primary;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    padding: $size-3;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: $font-inter;
+
+    &:hover {
+      box-shadow: $level-1;
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      box-shadow: none;
+      transform: translateY(0);
+    }
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: $size-6 0;
+    color: $on-bg-low;
+    font-size: $label-large;
+    font-weight: $bold;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid $outline-variant;
+    }
+    &::before {
+      margin-right: $size-4;
+    }
+    &::after {
+      margin-left: $size-4;
+    }
+  }
+
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $size-3;
+    background-color: $white;
+    color: $on-primary;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    padding: $size-3;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: $size-8;
+    font-family: $font-inter;
+
+    img {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:hover {
+      background-color: $secondary;
+    }
+  }
+
+  .auth-footer {
+    text-align: center;
+    color: $on-bg-low;
+    font-size: $body-medium;
+
+    a {
+      color: $on-primary;
+      font-weight: $bold;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  }
+
+  #register-view {
+    display: none;
+  }
+
+  &.view-register {
+    #login-view {
+      display: none;
+    }
+    #register-view {
+      display: block;
+    }
+  }
+}
