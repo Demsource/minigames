@@ -1,0 +1,215 @@
+@use '../../styles/tokens' as *;
+
+.footer-section {
+  width: 100%;
+  background-color: $bg-footer;
+  color: $white;
+  font-family: $font-inter;
+  padding: $size-10 $size-15 $size-6;
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: $size-8 $size-6 $size-6;
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    padding: $size-6 $size-4 $size-4;
+  }
+
+  .footer-top {
+    display: flex;
+    justify-content: space-between;
+    gap: $size-10;
+    margin-bottom: $size-10;
+
+    @media (max-width: $breakpoint-tablet) {
+      flex-direction: column;
+      gap: $size-8;
+    }
+
+    .footer-brand {
+      max-width: 320px;
+
+      @media (max-width: $breakpoint-tablet) {
+        max-width: 100%;
+      }
+
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: $size-2;
+        margin-bottom: $size-4;
+
+        img {
+          width: 32px;
+          height: 32px;
+        }
+
+        h2 {
+          font-size: $headline-medium;
+          font-weight: $extra-bold;
+          margin: 0;
+          color: $white;
+        }
+      }
+
+      p {
+        color: $on-bg-footer;
+        font-size: $body-medium;
+        line-height: 1.5;
+        margin: 0;
+      }
+    }
+
+    .footer-links-wrapper {
+      display: flex;
+      gap: $size-15;
+
+      @media (max-width: $breakpoint-tablet) {
+        justify-content: space-between;
+        gap: $size-6;
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        flex-wrap: wrap;
+        gap: $size-8;
+      }
+    }
+
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: $size-4;
+
+      @media (max-width: $breakpoint-mobile) {
+        &.explore,
+        &.company {
+          flex: 1 1 40%;
+        }
+        &.community {
+          flex: 1 1 100%;
+        }
+      }
+
+      h3 {
+        font-size: $body-large;
+        font-weight: $bold;
+        margin: 0 0 $size-2;
+        color: $white;
+      }
+
+      a {
+        color: $on-bg-footer;
+        text-decoration: none;
+        font-size: $body-medium;
+        transition: color 0.2s;
+
+        &:hover {
+          color: $white;
+        }
+      }
+
+      .social-icons {
+        display: flex;
+        gap: $size-3;
+
+        .social-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background-color: $bg-footer-low;
+          color: $white;
+          transition: background-color 0.2s;
+
+          &:hover {
+            background-color: $bg-footer-lowest;
+          }
+
+          img {
+            width: 20px;
+            height: 20px;
+          }
+        }
+      }
+    }
+  }
+
+  .footer-divider {
+    height: 1px;
+    background-color: $bg-footer-low;
+    margin-bottom: $size-6;
+  }
+
+  .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: $on-bg-footer;
+    font-size: $body-small;
+
+    @media (max-width: $breakpoint-tablet) {
+      flex-wrap: wrap;
+      gap: $size-4;
+    }
+
+    @media (max-width: $breakpoint-mobile) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $size-4;
+    }
+
+    .copyright {
+      @media (max-width: $breakpoint-mobile) {
+        width: 100%;
+      }
+    }
+
+    .partners {
+      display: flex;
+      align-items: center;
+      gap: $size-6;
+
+      @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $size-3;
+      }
+
+      a {
+        display: flex;
+        align-items: center;
+        gap: $size-2;
+        color: $on-bg-footer;
+        text-decoration: none;
+        transition: color 0.2s;
+
+        &:hover {
+          color: $white;
+        }
+
+        img {
+          height: 20px;
+        }
+
+        .code-icon {
+          background-color: $white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: $on-primary;
+        }
+      }
+    }
+
+    .designed-by {
+      @media (max-width: $breakpoint-mobile) {
+        display: none;
+      }
+    }
+  }
+}
