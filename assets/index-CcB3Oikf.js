@@ -101,8 +101,61 @@
     <div class="carousel-container">
       ${u.map((e,t)=>d(e,t)).join(``)}
     </div>
-  `,setTimeout(()=>{let t=e.querySelector(`.carousel-container`);t&&(t.scrollLeft=144)},0),e}function p(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e.append(f()),e}function m(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
+  `,setTimeout(()=>{let t=e.querySelector(`.carousel-container`);t&&(t.scrollLeft=144)},0),e}var p={data:[{rank:1,playerName:`Alex_Pro99`,gamesPlayed:142,totalScore:94250,streakDays:12,favoriteGameSlug:`heartopia`,favoriteGameName:`Heartopia`},{rank:2,playerName:`CozyGamer_x`,gamesPlayed:118,totalScore:81400,streakDays:8,favoriteGameSlug:`cat-mail-co`,favoriteGameName:`Cat Mail Co.`},{rank:3,playerName:`MatchMaster`,gamesPlayed:98,totalScore:72110,streakDays:5,favoriteGameSlug:`tiny-glade`,favoriteGameName:`Tiny Glade`},{rank:4,playerName:`BubblePop`,gamesPlayed:87,totalScore:65900,streakDays:3,favoriteGameSlug:`whisper-of-the-house`,favoriteGameName:`Whisper of the House`},{rank:5,playerName:`SudokuGod`,gamesPlayed:74,totalScore:59320,streakDays:2,favoriteGameSlug:`cat-chess`,favoriteGameName:`Cat Chess`}],meta:{totalItems:5,description:`Top Players This Week`}};function m(e){return e.toLocaleString(`en-US`)}function h(e){return(e/1e3).toFixed(1)+`K`}function g(e){let t=e.match(/[A-Z]/g);return t&&t.length>=2?t[0]+t[1]:e.slice(0,2).toUpperCase()}function _(){let e=document.createElement(`section`);return e.className=`leaderboard-section`,e.innerHTML=`
+    <header class="section-header">
+      <div class="title-accent"></div>
+      <h2>
+        <span class="desktop-title">Top Players This Week</span>
+        <span class="mobile-title">Top Players</span>
+      </h2>
+    </header>
+    <div class="leaderboard-table-container">
+      <div class="lb-row lb-header">
+        <div class="lb-cell">RANK</div>
+        <div class="lb-cell">PLAYER</div>
+        <div class="lb-cell col-games">
+          <span class="desktop-val">GAMES PLAYED</span>
+          <span class="tablet-val">GAMES</span>
+          <span class="mobile-val">GAMES</span>
+        </div>
+        <div class="lb-cell">
+          <span class="desktop-val">TOTAL SCORE</span>
+          <span class="tablet-val">SCORE</span>
+          <span class="mobile-val">SCORE</span>
+        </div>
+        <div class="lb-cell">STREAK</div>
+        <div class="lb-cell col-favorite">FAVORITE GAME</div>
+      </div>
+      ${p.data.map(e=>`
+    <div class="lb-row lb-data rank-${e.rank}">
+      <div class="lb-cell cell-rank ${e.rank===1?`top-1`:``} ${e.rank===2?`top-2`:``} ${e.rank===3?`top-3`:``}">
+        <span class="desktop-val">#${e.rank}</span>
+        <span class="tablet-val">#${e.rank}</span>
+        <span class="mobile-val">#${e.rank}</span>
+      </div>
+      <div class="lb-cell cell-player">
+        <div class="player-avatar bg-${e.rank}">${g(e.playerName)}</div>
+        <span class="player-name">${e.playerName}</span>
+      </div>
+      <div class="lb-cell col-games">${e.gamesPlayed}</div>
+      <div class="lb-cell cell-score">
+        <span class="desktop-val">${m(e.totalScore)}</span>
+        <span class="tablet-val">${m(e.totalScore)}</span>
+        <span class="mobile-val">${h(e.totalScore)}</span>
+      </div>
+      <div class="lb-cell cell-streak">
+        🔥 <span class="desktop-val">${e.streakDays} days</span>
+        <span class="tablet-val">${e.streakDays}d</span>
+        <span class="mobile-val">${e.streakDays}d</span>
+      </div>
+      <div class="lb-cell col-favorite cell-favorite">
+        <span class="pill">${e.favoriteGameName}</span>
+      </div>
+    </div>
+  `).join(``)}
+    </div>
+  `,e}function v(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e.append(f()),e.append(_()),e}function y(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
     <h1>Library Page</h1>
     <p>Explore your game library here.</p>
     <a href="/" data-link class="nav-link">Go Home</a>
-  `,e}var h=document.querySelector(`#app`);if(h){let t=new e(h,`/minigames`);t.addRoute(`/`,p),t.addRoute(`/library`,m),t.handleRoute()}
+  `,e}var b=document.querySelector(`#app`);if(b){let t=new e(b,`/minigames`);t.addRoute(`/`,v),t.addRoute(`/library`,y),t.handleRoute()}
