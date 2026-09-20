@@ -1,4 +1,5 @@
 import logoUrl from '../../assets/icons/logo-minigames.svg';
+import { BurgerMenu } from './burger-menu/burger-menu';
 
 const openAuthPlaceholder = (event: Event) => {
   event.preventDefault();
@@ -28,6 +29,12 @@ export function Header(): HTMLElement {
       <div class="header-auth">
         <button type="button" class="btn-login" id="login-btn">Log In</button>
         <button type="button" class="btn-signup" id="signup-btn">Sign Up</button>
+        
+        <button type="button" class="burger-toggle" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
     </div>
   `;
@@ -38,6 +45,12 @@ export function Header(): HTMLElement {
 
   loginButton?.addEventListener('click', openAuthPlaceholder);
   signupButton?.addEventListener('click', openAuthPlaceholder);
+
+  const burgerMenu = new BurgerMenu();
+  document.body.append(burgerMenu.getElement());
+
+  const burgerToggle = headerElement.querySelector('.burger-toggle');
+  burgerToggle?.addEventListener('click', () => burgerMenu.open());
 
   return headerElement;
 }

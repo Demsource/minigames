@@ -1,4 +1,3 @@
-// src/pages/library.ts
 export function Library(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';

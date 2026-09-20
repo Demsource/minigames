@@ -39,10 +39,10 @@
   }
 
   .header-nav {
-    display: none; // Hidden on mobile by default (will handle burger menu later)
+    display: none;
     gap: $size-4;
 
-    @media (min-width: $breakpoint-tablet) {
+    @media (min-width: 769px) {
       display: flex;
       align-items: center;
     }
@@ -88,6 +88,10 @@
       color: $on-primary;
       border: 2px solid $on-primary;
 
+      @media (max-width: 768px) {
+        display: none;
+      }
+
       &:hover {
         background-color: $secondary;
       }
@@ -98,8 +102,39 @@
       color: $on-primary;
       border: 2px solid $on-primary;
 
+      @media (max-width: $breakpoint-mobile) {
+        display: none;
+      }
+
       &:hover {
         background-color: $primary-high;
+      }
+    }
+
+    .burger-toggle {
+      display: none;
+      width: 40px;
+      height: 40px;
+      background-color: transparent;
+      border: 2px solid $on-primary;
+      border-radius: $corner-small;
+      cursor: pointer;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      padding: 0;
+
+      span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background-color: $on-primary;
+        border-radius: 2px;
+      }
+
+      @media (max-width: 768px) {
+        display: flex;
       }
     }
   }
