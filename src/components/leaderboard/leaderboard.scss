@@ -1,0 +1,258 @@
+@use '../../styles/tokens' as *;
+
+.leaderboard-section {
+  width: 100%;
+  margin: $size-8 auto;
+  padding: 0 $size-15;
+  font-family: $font-inter;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: $size-3;
+    margin-bottom: $size-6;
+
+    .title-accent {
+      width: 6px;
+      height: 28px;
+      background-color: $primary;
+      border-radius: $corner-full;
+    }
+
+    h2 {
+      font-size: $headline-large;
+      font-weight: $extra-bold;
+      color: $on-primary;
+      margin: 0;
+
+      .mobile-title {
+        display: none;
+      }
+
+      .desktop-title {
+        display: inline;
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        .mobile-title {
+          display: inline;
+        }
+
+        .desktop-title {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .leaderboard-table-container {
+    width: 100%;
+    border: 2px solid $on-primary;
+    box-shadow: $level-3;
+    border-radius: $corner-large;
+    overflow: hidden;
+    background-color: $surface-low;
+
+    .lb-row {
+      display: grid;
+      // Rank, Player, Games, Score, Streak, Favorite Game
+      grid-template-columns: 80px 2.5fr 1fr 1fr 1fr 1.5fr;
+      align-items: center;
+      padding: $size-4 $size-6;
+      border-bottom: 1px solid $outline;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      @media (max-width: $breakpoint-tablet) {
+        // Drop Favorite Game
+        grid-template-columns: 60px 2fr 1fr 1fr 1fr;
+        padding: $size-4 $size-5;
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        // Drop Games Played
+        grid-template-columns: 40px 1.5fr 1fr 1fr;
+        padding: $size-4 $size-3;
+        gap: $size-2;
+      }
+    }
+
+    .lb-header {
+      background-color: $tertiary;
+      color: $white;
+      font-weight: $bold;
+      font-size: $label-large;
+      text-transform: uppercase;
+      border-bottom: 2px solid $on-primary;
+
+      .lb-cell {
+        color: $white;
+      }
+    }
+
+    .lb-data {
+      background-color: $surface;
+
+      &:nth-child(even) {
+        background-color: $white;
+      }
+
+      // Hide 4th and 5th items on tablet and mobile
+      &.rank-4,
+      &.rank-5 {
+        @media (max-width: $breakpoint-tablet) {
+          display: none;
+        }
+      }
+    }
+
+    .lb-cell {
+      font-size: $body-medium;
+      color: $on-bg;
+      font-weight: $medium;
+
+      &.col-favorite {
+        @media (max-width: $breakpoint-tablet) {
+          display: none;
+        }
+      }
+
+      &.col-games {
+        @media (max-width: $breakpoint-mobile) {
+          display: none;
+        }
+      }
+    }
+
+    .cell-rank {
+      font-weight: $bold;
+      color: $on-bg-low;
+
+      &.top-1 {
+        color: $primary;
+      }
+
+      &.top-2 {
+        color: $on-bg;
+      }
+
+      &.top-3 {
+        color: $on-bg;
+      }
+    }
+
+    .cell-player {
+      display: flex;
+      align-items: center;
+      gap: $size-3;
+      overflow: hidden;
+
+      .player-avatar {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid $on-primary;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: $label-medium;
+        font-weight: $bold;
+        color: $on-primary;
+
+        &.bg-1 {
+          background-color: $primary;
+        }
+
+        &.bg-2 {
+          background-color: $avatar-random-2;
+        }
+
+        &.bg-3 {
+          background-color: $avatar-random-3;
+        }
+
+        &.bg-4 {
+          background-color: $avatar-random-4;
+        }
+
+        &.bg-5 {
+          background-color: $avatar-random-5;
+        }
+      }
+
+      .player-name {
+        font-weight: $bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        gap: $size-2;
+      }
+    }
+
+    .cell-score {
+      font-weight: $bold;
+    }
+
+    .cell-streak {
+      font-weight: $bold;
+    }
+
+    .cell-favorite {
+      .pill {
+        display: inline-block;
+        padding: $size-05 $size-2;
+        border: 1px solid $on-primary;
+        border-radius: $corner-full;
+        font-size: $label-medium;
+        background-color: $white;
+      }
+    }
+
+    // Responsive Text Helpers
+    .desktop-val {
+      display: inline;
+    }
+
+    .tablet-val {
+      display: none;
+    }
+
+    .mobile-val {
+      display: none;
+    }
+
+    @media (max-width: $breakpoint-tablet) {
+      .desktop-val {
+        display: none;
+      }
+
+      .tablet-val {
+        display: inline;
+      }
+
+      .mobile-val {
+        display: none;
+      }
+    }
+
+    @media (max-width: $breakpoint-mobile) {
+      .desktop-val {
+        display: none;
+      }
+
+      .tablet-val {
+        display: none;
+      }
+
+      .mobile-val {
+        display: inline;
+      }
+    }
+  }
+}

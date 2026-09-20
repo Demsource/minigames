@@ -1,0 +1,129 @@
+@use '../../styles/tokens' as *;
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  background-image: url('../../assets/images/Hero%20Section.png');
+  background-size: cover;
+  background-position: center;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(30, 27, 58, 0.65);
+    z-index: 1;
+  }
+
+  .hero-container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: $size-6 $size-10;
+  }
+
+  .hero-card {
+    background-color: $surface;
+    border: 2px solid $on-primary;
+    box-shadow: $level-3;
+    border-radius: $corner-medium;
+    padding: $size-6;
+    max-width: 580px;
+
+    h1 {
+      font-family: $font-inter;
+      font-size: $display-large;
+      font-weight: $extra-bold;
+      color: $on-primary;
+      margin-top: 0;
+      margin-bottom: $size-4;
+      line-height: 1.2;
+    }
+
+    p {
+      font-family: $font-inter;
+      font-size: $body-large;
+      color: $on-bg-low;
+      margin-top: 0;
+      margin-bottom: $size-6;
+      line-height: 1.5;
+    }
+
+    .mobile-text {
+      display: none;
+    }
+
+    .desktop-text {
+      display: inline;
+    }
+
+    .btn-browse {
+      background-color: $primary;
+      color: $on-primary;
+      border: 2px solid $on-primary;
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      padding: $btn-medium;
+      border-radius: $corner-small;
+      cursor: pointer;
+
+      &:hover {
+        background-color: $primary-high;
+      }
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    min-height: 450px;
+
+    .hero-container {
+      padding: $size-5 $size-4;
+    }
+
+    .hero-card {
+      max-width: 70%;
+      padding: $size-5;
+      box-shadow: $level-2;
+
+      h1 {
+        font-size: $display-medium;
+      }
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    min-height: 400px;
+
+    .hero-container {
+      padding: $size-4;
+    }
+
+    .hero-card {
+      max-width: 100%;
+      padding: $size-4;
+      box-shadow: $level-1;
+
+      h1 {
+        font-size: $headline-large;
+        margin-bottom: $size-3;
+      }
+
+      .mobile-text {
+        display: inline;
+      }
+
+      .desktop-text {
+        display: none;
+      }
+    }
+  }
+}

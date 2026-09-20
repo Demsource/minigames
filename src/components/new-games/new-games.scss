@@ -1,0 +1,178 @@
+@use '../../styles/tokens' as *;
+
+.new-games-section {
+  width: 100%;
+  margin: $size-8 auto;
+  padding: 0 $size-15;
+  font-family: $font-inter;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $size-6;
+
+    .header-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: $size-3;
+
+      .title-accent {
+        width: 6px;
+        height: 28px;
+        background-color: $primary;
+        border-radius: $corner-full;
+      }
+
+      h2 {
+        font-size: $headline-large;
+        font-weight: $extra-bold;
+        color: $on-primary;
+        margin: 0;
+      }
+    }
+
+    .header-nav-buttons {
+      display: flex;
+      gap: $size-3;
+
+      button {
+        width: 44px;
+        height: 44px;
+        border-radius: $corner-full;
+        border: 2px solid $on-primary;
+        background-color: transparent;
+        color: $on-primary;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+
+        &.btn-next {
+          background-color: $primary;
+        }
+
+        &:hover {
+          opacity: 0.8;
+        }
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        display: none;
+      }
+    }
+  }
+
+  .carousel-container {
+    display: flex;
+    gap: $size-1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .game-card {
+      container-type: inline-size;
+      flex: 0 0 auto;
+
+      width: 288px;
+      height: 384px;
+
+      &.game-card-wide {
+        width: 816px;
+      }
+
+      position: relative;
+      border-radius: $corner-large;
+      overflow: hidden;
+      border: 2px solid $on-primary;
+
+      // Keep aspect ratio constraint fallback if needed, but fixed height/width overrides it.
+
+      @media (max-width: $breakpoint-tablet) {
+        width: 200px;
+        height: 266px;
+
+        &.game-card-wide {
+          width: 480px;
+        }
+      }
+
+      @media (max-width: $breakpoint-mobile) {
+        width: 140px;
+        height: 186px;
+
+        &.game-card-wide {
+          width: 288px;
+        }
+      }
+
+      .game-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .game-info-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: $size-10 $size-4 $size-4;
+        background: linear-gradient(
+          to top,
+          rgba(30, 27, 58, 0.95) 0%,
+          rgba(30, 27, 58, 0) 100%
+        );
+        color: $white;
+        display: none; // Hidden by default
+        flex-direction: column;
+        gap: $size-2;
+
+        .game-title {
+          font-size: $body-large;
+          font-weight: $bold;
+          margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .game-stats {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: $body-small;
+          font-weight: $bold;
+
+          .stat-item {
+            display: flex;
+            align-items: center;
+            gap: $size-1;
+
+            img {
+              width: 16px;
+              height: 16px;
+            }
+          }
+        }
+      }
+
+      // Container query for 288px threshold (284px due to 2px borders)
+      @container (min-width: 284px) {
+        .game-info-overlay {
+          display: flex;
+        }
+      }
+    }
+  }
+}
