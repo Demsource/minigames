@@ -66,8 +66,43 @@
         <button type="button" class="btn-browse">Browse Library</button>
       </div>
     </div>
-  `,e}function c(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e}function l(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
+  `,e}var c=`data:image/svg+xml,%3csvg%20width='20'%20height='19'%20viewBox='0%200%2020%2019'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M6.85%2014.825L10%2012.925L13.15%2014.85L12.325%2011.25L15.1%208.85L11.45%208.525L10%205.125L8.55%208.5L4.9%208.825L7.675%2011.25L6.85%2014.825ZM3.825%2019L5.45%2011.975L0%207.25L7.2%206.625L10%200L12.8%206.625L20%207.25L14.55%2011.975L16.175%2019L10%2015.275L3.825%2019Z'%20fill='%23FFD02B'/%3e%3c/svg%3e`,l=`data:image/svg+xml,%3csvg%20width='20'%20height='19'%20viewBox='0%200%2020%2019'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M10%2018.35L8.55%2017.05C6.86667%2015.5333%205.475%2014.225%204.375%2013.125C3.275%2012.025%202.4%2011.0417%201.75%2010.175C1.1%209.29167%200.641667%208.48333%200.375%207.75C0.125%207.01667%200%206.26667%200%205.5C0%203.93333%200.525%202.625%201.575%201.575C2.625%200.525%203.93333%200%205.5%200C6.36667%200%207.19167%200.183333%207.975%200.55C8.75833%200.916667%209.43333%201.43333%2010%202.1C10.5667%201.43333%2011.2417%200.916667%2012.025%200.55C12.8083%200.183333%2013.6333%200%2014.5%200C16.0667%200%2017.375%200.525%2018.425%201.575C19.475%202.625%2020%203.93333%2020%205.5C20%206.26667%2019.8667%207.01667%2019.6%207.75C19.35%208.48333%2018.9%209.29167%2018.25%2010.175C17.6%2011.0417%2016.725%2012.025%2015.625%2013.125C14.525%2014.225%2013.1333%2015.5333%2011.45%2017.05L10%2018.35ZM10%2015.65C11.6%2014.2167%2012.9167%2012.9917%2013.95%2011.975C14.9833%2010.9417%2015.8%2010.05%2016.4%209.3C17%208.53333%2017.4167%207.85834%2017.65%207.275C17.8833%206.675%2018%206.08333%2018%205.5C18%204.5%2017.6667%203.66667%2017%203C16.3333%202.33333%2015.5%202%2014.5%202C13.7167%202%2012.9917%202.225%2012.325%202.675C11.6583%203.10833%2011.2%203.66667%2010.95%204.35H9.05C8.8%203.66667%208.34167%203.10833%207.675%202.675C7.00833%202.225%206.28333%202%205.5%202C4.5%202%203.66667%202.33333%203%203C2.33333%203.66667%202%204.5%202%205.5C2%206.08333%202.11667%206.675%202.35%207.275C2.58333%207.85834%203%208.53333%203.6%209.3C4.2%2010.05%205.01667%2010.9417%206.05%2011.975C7.08333%2012.9917%208.4%2014.2167%2010%2015.65Z'%20fill='%23FF4B4B'/%3e%3c/svg%3e`,u=[{title:`Candy Crush`,image:`/minigames/assets/Game%20Card%20-%20Candy%20Crush-BFyEbBZ6.png`,rating:`4.6`,likes:`89.0K`},{title:`ISLANDERS: New Shores`,image:`/minigames/assets/Game%20Card%20-%20Islanders%20New%20Shores-DDuAg2Gr.png`,rating:`4.9`,likes:`54.2K`},{title:`Vacation Cafe Simulator`,image:`/minigames/assets/Game%20Card%20-%20Vacation%20Cafe%20Simulator-KK_EFf11.png`,rating:`4.8`,likes:`28.7K`},{title:`Winter Burrow`,image:`/minigames/assets/Game%20Card%20-%20Winter%20Burrow-CGq3U16Y.png`,rating:`4.9`,likes:`32.4K`},{title:`Bubble Shooter`,image:`/minigames/assets/Game%20Card%20-%20Bubble%20Shooter-CbJ-ddeT.png`,rating:`4.7`,likes:`12.1K`}];function d(e,t){return`
+    <div class="game-card${t===2?` game-card-wide`:``}">
+      <img src="${e.image}" alt="${e.title}" class="game-image" />
+      <div class="game-info-overlay">
+        <h3 class="game-title" title="${e.title}">${e.title}</h3>
+        <div class="game-stats">
+          <div class="stat-item rating">
+            <img src="${c}" alt="Star" />
+            <span>${e.rating}</span>
+          </div>
+          <div class="stat-item likes">
+            <img src="${l}" alt="Heart" />
+            <span>${e.likes}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `}function f(){let e=document.createElement(`section`);return e.className=`new-games-section`,e.innerHTML=`
+    <header class="section-header">
+      <div class="header-title-wrapper">
+        <div class="title-accent"></div>
+        <h2>New Games</h2>
+      </div>
+      <div class="header-nav-buttons">
+        <button type="button" class="btn-prev" aria-label="Previous">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <button type="button" class="btn-next" aria-label="Next">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="carousel-container">
+      ${u.map((e,t)=>d(e,t)).join(``)}
+    </div>
+  `,setTimeout(()=>{let t=e.querySelector(`.carousel-container`);t&&(t.scrollLeft=144)},0),e}function p(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e.append(f()),e}function m(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
     <h1>Library Page</h1>
     <p>Explore your game library here.</p>
     <a href="/" data-link class="nav-link">Go Home</a>
-  `,e}var u=document.querySelector(`#app`);if(u){let t=new e(u,`/minigames`);t.addRoute(`/`,c),t.addRoute(`/library`,l),t.handleRoute()}
+  `,e}var h=document.querySelector(`#app`);if(h){let t=new e(h,`/minigames`);t.addRoute(`/`,p),t.addRoute(`/library`,m),t.handleRoute()}
