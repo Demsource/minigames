@@ -1,11 +1,7 @@
 import './burger-menu.scss';
 import logoUrl from '../../../assets/icons/logo-minigames.svg';
 import closeUrl from '../../../assets/icons/close.svg';
-
-const openAuthPlaceholder = (event: Event) => {
-  event.preventDefault();
-  alert('Auth dialog will be built later!');
-};
+import { AuthDialog } from '../../dialogs/auth-dialog';
 
 export class BurgerMenu {
   private element: HTMLElement;
@@ -59,12 +55,14 @@ export class BurgerMenu {
     const signupButton = this.element.querySelector('#burger-signup-btn');
 
     loginButton?.addEventListener('click', (event) => {
+      event.preventDefault();
       this.close();
-      openAuthPlaceholder(event);
+      AuthDialog.open();
     });
     signupButton?.addEventListener('click', (event) => {
+      event.preventDefault();
       this.close();
-      openAuthPlaceholder(event);
+      AuthDialog.open();
     });
 
     // Close when clicking a nav link
