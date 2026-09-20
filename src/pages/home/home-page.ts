@@ -1,11 +1,12 @@
-// src/pages/home.ts
+import { Header } from '../../components/header/header';
+import '../../components/header/header.scss';
+import './home-page.scss';
+
 export function Home(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';
-  container.innerHTML = `
-    <h1>Home Page</h1>
-    <p>Welcome to the minigames app!</p>
-    <a href="/library" data-link class="nav-link">Go to Library</a>
-  `;
+
+  container.append(Header());
+
   return container;
 }
