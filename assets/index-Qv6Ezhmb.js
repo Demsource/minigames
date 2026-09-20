@@ -154,8 +154,29 @@
     </div>
   `).join(``)}
     </div>
-  `,e}function v(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e.append(f()),e.append(_()),e}function y(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
+  `,e}var v=`/minigames/assets/working-station-CM8ozyRC.png`;function y(){let e=document.createElement(`section`);return e.className=`developer-cta-section`,e.innerHTML=`
+    <div class="cta-image-wrapper">
+      <img src="${v}" alt="Developer working station with a game on screen" />
+    </div>
+    <div class="cta-card">
+      <h2>Are You a Game Developer?</h2>
+      <p>
+        Want to see your game on MiniGames? We're always looking for fun,
+        engaging mini games to add to our platform. Submit your game
+        and reach thousands of players!
+      </p>
+      <button class="btn-submit" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Submit Form
+      </button>
+      <p class="contact-text">or contact us at developers@minigames.com</p>
+    </div>
+  `,e}function b(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(o()),e.append(s()),e.append(f()),e.append(_()),e.append(y()),e}function x(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
     <h1>Library Page</h1>
     <p>Explore your game library here.</p>
     <a href="/" data-link class="nav-link">Go Home</a>
-  `,e}var b=document.querySelector(`#app`);if(b){let t=new e(b,`/minigames`);t.addRoute(`/`,v),t.addRoute(`/library`,y),t.handleRoute()}
+  `,e}var S=document.querySelector(`#app`);if(S){let t=new e(S,`/minigames`);t.addRoute(`/`,b),t.addRoute(`/library`,x),t.handleRoute()}
