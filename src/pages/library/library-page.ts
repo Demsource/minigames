@@ -1,6 +1,7 @@
 import { Header } from '../../components/header/header';
 import '../../components/header/header.scss';
 import { PageTitle } from '../../components/page-title/page-title';
+import { FilterSortBar } from '../../components/sort-and-filter/filter-sort-bar';
 import { Footer } from '../../components/footer/footer';
 import './library-page.scss';
 
@@ -13,6 +14,12 @@ export function Library(currentRoute: string): HTMLElement {
     PageTitle({
       title: 'Game Library',
       subtitle: 'Browse our collection of casual mini-games',
+    })
+  );
+  container.append(
+    FilterSortBar({
+      onFilterChange: (slug) => console.log('Filter changed:', slug),
+      onSortChange: (sortId) => console.log('Sort changed:', sortId),
     })
   );
   container.append(Footer());
