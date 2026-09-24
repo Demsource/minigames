@@ -318,4 +318,38 @@
       </div>
       <div class="designed-by">Designed with love</div>
     </div>
-  `,e}function k(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(d()),t.append(g()),t.append(x()),t.append(C()),t.append(O()),t}function A(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(O()),t}var j=document.querySelector(`#app`);if(j){let t=new e(j,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,A),t.handleRoute()}
+  `,e}function k(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(d()),t.append(g()),t.append(x()),t.append(C()),t.append(O()),t}function A({title:e,subtitle:t}){let n=document.createElement(`section`);return n.className=`page-title-section`,n.innerHTML=`
+    <div class="page-title-container">
+      <h1>${e}</h1>
+      <p>${t}</p>
+    </div>
+  `,n}var j={data:[{slug:`all`,label:`All Games`,isDefault:!0},{slug:`puzzle`,label:`Puzzle`,isDefault:!1},{slug:`card`,label:`Card`,isDefault:!1},{slug:`match`,label:`Match`,isDefault:!1},{slug:`farm`,label:`Farm`,isDefault:!1},{slug:`strategy`,label:`Strategy`,isDefault:!1},{slug:`arcade`,label:`Arcade`,isDefault:!1}],meta:{totalItems:7,description:`Game categories for Library filter chips`}};function M({onChipClick:e}){let t=document.createElement(`div`);t.className=`filter-chips`;let n=j.data.find(e=>e.isDefault)||j.data[0];t.innerHTML=`
+    <div class="chips-scroll-container">
+      ${j.data.map(e=>`
+        <button
+          class="chip${e.slug===n.slug?` active`:``}"
+          data-slug="${e.slug}"
+        >
+          ${e.label}
+        </button>
+      `).join(``)}
+    </div>
+  `;let r=t.querySelectorAll(`.chip`);for(let n of r)n.addEventListener(`click`,()=>{t.querySelector(`.chip.active`)?.classList.remove(`active`),n.classList.add(`active`);let r=n.dataset.slug;e?.(r||``)});return t}var N=`data:image/svg+xml,%3csvg%20width='10'%20height='5'%20viewBox='0%200%2010%205'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M0%205L5%200L10%205H0Z'%20fill='%23444746'/%3e%3c/svg%3e`,P=`data:image/svg+xml,%3csvg%20width='13'%20height='11'%20viewBox='0%200%2013%2011'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M10.8324%201.5L4.41637%207.9162L1.5%204.99975'%20stroke='%233A2EBF'%20stroke-width='3'%20stroke-linecap='round'/%3e%3c/svg%3e`,F=[{id:`rating-asc`,label:`Rating ↑`},{id:`rating-desc`,label:`Rating ↓`},{id:`name-asc`,label:`Name A→Z`},{id:`name-desc`,label:`Name Z→A`}];function I({onSortChange:e}){let t=document.createElement(`div`);t.className=`sort-control`;let n=F[1];t.innerHTML=`
+    <button class="sort-button" aria-expanded="false" aria-haspopup="listbox">
+      <span class="sort-text">Sort by: ${n.label}</span>
+      <img src="${N}" alt="" class="sort-icon" />
+    </button>
+    <div class="sort-dropdown" role="listbox" aria-label="Sort options">
+      ${F.map(e=>`
+        <div
+          class="sort-option${e.id===n.id?` active`:``}"
+          role="option"
+          data-id="${e.id}"
+          aria-selected="${e.id===n.id}"
+        >
+          ${e.id===n.id?`<img src="${P}" alt="Selected" class="checkmark" />`:``}
+          <span>${e.label}</span>
+        </div>
+      `).join(``)}
+    </div>
+  `;let r=t.querySelector(`.sort-button`),i=t.querySelector(`.sort-dropdown`),a=t.querySelectorAll(`.sort-option`),o=!1,s=()=>{o=!o,i.classList.toggle(`open`,o),r.classList.toggle(`open`,o),r.setAttribute(`aria-expanded`,o.toString()),o&&a[0].focus()},c=()=>{o&&(o=!1,i.classList.remove(`open`),r.classList.remove(`open`),r.setAttribute(`aria-expanded`,`false`),r.focus())};r.addEventListener(`click`,s);for(let n of a)n.addEventListener(`click`,()=>{let r=t.querySelector(`.sort-option.active`);r?.classList.remove(`active`),r?.setAttribute(`aria-selected`,`false`);let i=r?.querySelector(`.checkmark`);i&&i.remove(),n.classList.add(`active`),n.setAttribute(`aria-selected`,`true`);let a=t.querySelector(`.sort-text`);a.textContent=`Sort by: ${n.querySelector(`span`)?.textContent||``}`;let o=document.createElement(`img`);o.src=P,o.alt=`Selected`,o.className=`checkmark`,n.insertBefore(o,n.firstChild);let s=n.dataset.id;e?.(s||``),c()}),n.addEventListener(`mouseenter`,()=>{if(o){for(let e of a)e.classList.remove(`hover`);n.classList.add(`hover`)}});return document.addEventListener(`click`,e=>{t.contains(e.target)||c()}),t}function L({onFilterChange:e,onSortChange:t}){let n=document.createElement(`div`);return n.className=`filter-sort-bar`,n.append(M({onChipClick:e})),n.append(I({onSortChange:t})),n}function R(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(A({title:`Game Library`,subtitle:`Browse our collection of casual mini-games`})),t.append(L({onFilterChange:e=>console.log(`Filter changed:`,e),onSortChange:e=>console.log(`Sort changed:`,e)})),t.append(O()),t}var z=document.querySelector(`#app`);if(z){let t=new e(z,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,R),t.handleRoute()}
