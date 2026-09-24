@@ -318,8 +318,4 @@
       </div>
       <div class="designed-by">Designed with love</div>
     </div>
-  `,e}function k(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(u()),e.append(d()),e.append(g()),e.append(x()),e.append(C()),e.append(O()),e}function A(){let e=document.createElement(`div`);return e.className=`page-container`,e.innerHTML=`
-    <h1>Library Page</h1>
-    <p>Explore your game library here.</p>
-    <a href="/" data-link class="nav-link">Go Home</a>
-  `,e}var j=document.querySelector(`#app`);if(j){let t=new e(j,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,A),t.handleRoute()}
+  `,e}function k(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(u()),e.append(d()),e.append(g()),e.append(x()),e.append(C()),e.append(O()),e}function A(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(u()),e.append(O()),e}var j=document.querySelector(`#app`);if(j){let t=new e(j,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,A),t.handleRoute()}
