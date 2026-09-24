@@ -7,7 +7,7 @@ export class BurgerMenu {
   private element: HTMLElement;
   private isOpen = false;
 
-  constructor() {
+  constructor(currentRoute: string) {
     this.element = document.createElement('div');
     this.element.className = 'burger-menu-overlay';
 
@@ -25,8 +25,8 @@ export class BurgerMenu {
       </div>
 
       <nav class="burger-nav">
-        <a href="/" class="nav-item active" data-link>Home</a>
-        <a href="/" class="nav-item" data-link>Library</a>
+        <a href="/" class="nav-item${currentRoute === '/' ? ' active' : ''}" data-link>Home</a>
+        <a href="/library" class="nav-item${currentRoute === '/library' ? ' active' : ''}" data-link>Library</a>
         <a href="/" class="nav-item" data-link>Tournaments</a>
         <a href="/" class="nav-item" data-link>Community</a>
       </nav>

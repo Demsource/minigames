@@ -1,4 +1,4 @@
-type RouteHandler = () => HTMLElement;
+type RouteHandler = (currentRoute: string) => HTMLElement;
 
 export class Router {
   private routes: Map<string, RouteHandler> = new Map();
@@ -54,7 +54,7 @@ export class Router {
 
     this.rootElement.replaceChildren();
     if (handler) {
-      this.rootElement.append(handler());
+      this.rootElement.append(handler(relativePath));
     } else {
       this.rootElement.innerHTML = `
   <div class="page-container not-found">
