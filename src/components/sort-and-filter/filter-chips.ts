@@ -31,7 +31,7 @@ export function FilterChips({
     </div>
   `;
 
-  const chips = container.querySelectorAll('.chip');
+  const chips = container.querySelectorAll<HTMLElement>('.chip');
   for (const chip of chips) {
     chip.addEventListener('click', () => {
       const previousActive = container.querySelector('.chip.active');
