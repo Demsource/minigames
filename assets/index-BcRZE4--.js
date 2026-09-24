@@ -1,4 +1,4 @@
-(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),t.credentials=e.crossOrigin===`use-credentials`?`include`:e.crossOrigin===`anonymous`?`omit`:`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();var e=class{routes=new Map;rootElement;base;constructor(e,t=``){this.rootElement=e,this.base=t;let n=new URLSearchParams(globalThis.location.search).get(`p`);n&&globalThis.history.replaceState({},``,this.base+n),globalThis.addEventListener(`popstate`,()=>this.handleRoute()),document.addEventListener(`click`,e=>{let t=e.target.closest(`a`);if(!t||!t.matches(`[data-link]`))return;e.preventDefault();let n=t.getAttribute(`href`);n&&this.navigateTo(n)})}addRoute(e,t){this.routes.set(e,t)}navigateTo(e){globalThis.history.pushState({},``,this.base+e),this.handleRoute()}handleRoute(){let e=globalThis.location.pathname,t=e.startsWith(this.base)?e.slice(this.base.length)||`/`:e,n=this.routes.get(t)||this.routes.get(`/404`);this.rootElement.replaceChildren(),n?this.rootElement.append(n()):this.rootElement.innerHTML=`
+(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),t.credentials=e.crossOrigin===`use-credentials`?`include`:e.crossOrigin===`anonymous`?`omit`:`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();var e=class{routes=new Map;rootElement;base;constructor(e,t=``){this.rootElement=e,this.base=t;let n=new URLSearchParams(globalThis.location.search).get(`p`);n&&globalThis.history.replaceState({},``,this.base+n),globalThis.addEventListener(`popstate`,()=>this.handleRoute()),document.addEventListener(`click`,e=>{let t=e.target.closest(`a`);if(!t||!t.matches(`[data-link]`))return;e.preventDefault();let n=t.getAttribute(`href`);n&&this.navigateTo(n)})}addRoute(e,t){this.routes.set(e,t)}navigateTo(e){globalThis.history.pushState({},``,this.base+e),this.handleRoute()}handleRoute(){let e=globalThis.location.pathname,t=e.startsWith(this.base)?e.slice(this.base.length)||`/`:e,n=this.routes.get(t)||this.routes.get(`/404`);this.rootElement.replaceChildren(),n?this.rootElement.append(n(t)):this.rootElement.innerHTML=`
   <div class="page-container not-found">
     <h1>404 - Page Not Found</h1>
     <p>The page you are looking for does not exist.</p>
@@ -93,7 +93,7 @@
           Already have an account? <a id="switch-to-login">Login</a>
         </div>
       </div>
-    `,this.backdrop.append(this.dialog),document.body.append(this.backdrop)}attachEvents(){this.backdrop.addEventListener(`click`,e=>{e.target===this.backdrop&&this.close()});let e=this.dialog.querySelector(`#toggle-login`),t=this.dialog.querySelector(`#toggle-register`),n=this.dialog.querySelector(`#switch-to-login`),r=this.dialog.querySelector(`#switch-to-register`),i=()=>{this.dialog.classList.remove(`view-register`),e?.classList.add(`active`),t?.classList.remove(`active`)},a=()=>{this.dialog.classList.add(`view-register`),t?.classList.add(`active`),e?.classList.remove(`active`)};e?.addEventListener(`click`,i),n?.addEventListener(`click`,i),t?.addEventListener(`click`,a),r?.addEventListener(`click`,a),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&this.backdrop.classList.contains(`is-open`)&&this.close()})}open(){this.backdrop.classList.add(`is-open`),document.body.style.overflow=`hidden`}close(){this.backdrop.classList.remove(`is-open`),document.body.style.overflow=``}},l=class{element;isOpen=!1;constructor(){this.element=document.createElement(`div`),this.element.className=`burger-menu-overlay`,this.element.innerHTML=`
+    `,this.backdrop.append(this.dialog),document.body.append(this.backdrop)}attachEvents(){this.backdrop.addEventListener(`click`,e=>{e.target===this.backdrop&&this.close()});let e=this.dialog.querySelector(`#toggle-login`),t=this.dialog.querySelector(`#toggle-register`),n=this.dialog.querySelector(`#switch-to-login`),r=this.dialog.querySelector(`#switch-to-register`),i=()=>{this.dialog.classList.remove(`view-register`),e?.classList.add(`active`),t?.classList.remove(`active`)},a=()=>{this.dialog.classList.add(`view-register`),t?.classList.add(`active`),e?.classList.remove(`active`)};e?.addEventListener(`click`,i),n?.addEventListener(`click`,i),t?.addEventListener(`click`,a),r?.addEventListener(`click`,a),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&this.backdrop.classList.contains(`is-open`)&&this.close()})}open(){this.backdrop.classList.add(`is-open`),document.body.style.overflow=`hidden`}close(){this.backdrop.classList.remove(`is-open`),document.body.style.overflow=``}},l=class{element;isOpen=!1;constructor(e){this.element=document.createElement(`div`),this.element.className=`burger-menu-overlay`,this.element.innerHTML=`
       <div class="burger-header">
         <a href="/" class="burger-brand" data-link>
           <div class="burger-logo-icon">
@@ -107,8 +107,8 @@
       </div>
 
       <nav class="burger-nav">
-        <a href="/" class="nav-item active" data-link>Home</a>
-        <a href="/" class="nav-item" data-link>Library</a>
+        <a href="/" class="nav-item${e===`/`?` active`:``}" data-link>Home</a>
+        <a href="/library" class="nav-item${e===`/library`?` active`:``}" data-link>Library</a>
         <a href="/" class="nav-item" data-link>Tournaments</a>
         <a href="/" class="nav-item" data-link>Community</a>
       </nav>
@@ -117,7 +117,7 @@
         <button type="button" class="btn-login" id="burger-login-btn">Log In</button>
         <button type="button" class="btn-signup" id="burger-signup-btn">Sign Up</button>
       </div>
-    `,this.bindEvents()}bindEvents(){this.element.querySelector(`.burger-close`)?.addEventListener(`click`,()=>this.close()),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&this.isOpen&&this.close()});let e=this.element.querySelector(`#burger-login-btn`),t=this.element.querySelector(`#burger-signup-btn`);e?.addEventListener(`click`,e=>{e.preventDefault(),this.close(),c.open()}),t?.addEventListener(`click`,e=>{e.preventDefault(),this.close(),c.open()});let n=this.element.querySelectorAll(`.nav-item`);for(let e of n)e.addEventListener(`click`,()=>this.close())}open(){this.isOpen=!0,this.element.classList.add(`is-open`),document.body.style.overflow=`hidden`}close(){this.isOpen=!1,this.element.classList.remove(`is-open`),document.body.style.overflow=``}getElement(){return this.element}};function u(){let e=document.createElement(`header`);e.className=`site-header`,e.innerHTML=`
+    `,this.bindEvents()}bindEvents(){this.element.querySelector(`.burger-close`)?.addEventListener(`click`,()=>this.close()),document.addEventListener(`keydown`,e=>{e.key===`Escape`&&this.isOpen&&this.close()});let e=this.element.querySelector(`#burger-login-btn`),t=this.element.querySelector(`#burger-signup-btn`);e?.addEventListener(`click`,e=>{e.preventDefault(),this.close(),c.open()}),t?.addEventListener(`click`,e=>{e.preventDefault(),this.close(),c.open()});let n=this.element.querySelectorAll(`.nav-item`);for(let e of n)e.addEventListener(`click`,()=>this.close())}open(){this.isOpen=!0,this.element.classList.add(`is-open`),document.body.style.overflow=`hidden`}close(){this.isOpen=!1,this.element.classList.remove(`is-open`),document.body.style.overflow=``}getElement(){return this.element}};function u(e){let n=document.createElement(`header`);n.className=`site-header`,n.innerHTML=`
     <div class="header-inner">
       <a href="/" class="header-brand" data-link>
         <div class="header-logo-icon">
@@ -125,10 +125,10 @@
         </div>
         <span class="header-logo-text">MiniGames</span>
       </a>
-      
+
       <nav class="header-nav">
-        <a href="/" class="nav-item active" data-link>Home</a>
-        <a href="/" class="nav-item" data-link>Library</a>
+        <a href="/" class="nav-item${e===`/`?` active`:``}" data-link>Home</a>
+        <a href="/library" class="nav-item${e===`/library`?` active`:``}" data-link>Library</a>
         <a href="/" class="nav-item" data-link>Tournaments</a>
         <a href="/" class="nav-item" data-link>Community</a>
       </nav>
@@ -144,7 +144,7 @@
         </button>
       </div>
     </div>
-  `;let n=e.querySelector(`#login-btn`),r=e.querySelector(`#signup-btn`);n?.addEventListener(`click`,e=>{e.preventDefault(),c.open()}),r?.addEventListener(`click`,e=>{e.preventDefault(),c.open()});let i=new l;return document.body.append(i.getElement()),e.querySelector(`.burger-toggle`)?.addEventListener(`click`,()=>i.open()),e}function d(){let e=document.createElement(`section`);return e.className=`hero-section`,e.innerHTML=`
+  `;let r=n.querySelector(`#login-btn`),i=n.querySelector(`#signup-btn`);r?.addEventListener(`click`,e=>{e.preventDefault(),c.open()}),i?.addEventListener(`click`,e=>{e.preventDefault(),c.open()});let a=new l(e);return document.body.append(a.getElement()),n.querySelector(`.burger-toggle`)?.addEventListener(`click`,()=>a.open()),n}function d(){let e=document.createElement(`section`);return e.className=`hero-section`,e.innerHTML=`
     <div class="hero-container">
       <div class="hero-card">
         <h1>Take a Short Break<br>& Have Fun</h1>
@@ -277,10 +277,10 @@
       <div class="footer-links-wrapper">
         <div class="footer-col explore">
           <h3>Explore</h3>
-          <a href="/">Home</a>
-          <a href="/">Library</a>
-          <a href="/">Categories</a>
-          <a href="/">Tournaments</a>
+          <a href="/" data-link>Home</a>
+          <a href="/library" data-link>Library</a>
+          <a href="/" data-link>Categories</a>
+          <a href="/" data-link>Tournaments</a>
         </div>
         <div class="footer-col company">
           <h3>Company</h3>
@@ -318,4 +318,4 @@
       </div>
       <div class="designed-by">Designed with love</div>
     </div>
-  `,e}function k(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(u()),e.append(d()),e.append(g()),e.append(x()),e.append(C()),e.append(O()),e}function A(){let e=document.createElement(`div`);return e.className=`page-container`,e.append(u()),e.append(O()),e}var j=document.querySelector(`#app`);if(j){let t=new e(j,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,A),t.handleRoute()}
+  `,e}function k(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(d()),t.append(g()),t.append(x()),t.append(C()),t.append(O()),t}function A(e){let t=document.createElement(`div`);return t.className=`page-container`,t.append(u(e)),t.append(O()),t}var j=document.querySelector(`#app`);if(j){let t=new e(j,`/minigames`);t.addRoute(`/`,k),t.addRoute(`/library`,A),t.handleRoute()}
