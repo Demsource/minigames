@@ -6,11 +6,11 @@ import { Leaderboard } from '../../components/leaderboard/leaderboard';
 import { DeveloperCta } from '../../components/developer-cta/developer-cta';
 import { Footer } from '../../components/footer/footer';
 import './home-page.scss';
-export function Home(): HTMLElement {
+export function Home(currentRoute: string): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';
 
-  container.append(Header());
+  container.append(Header(currentRoute));
   container.append(Hero());
   container.append(NewGames());
   container.append(Leaderboard());
