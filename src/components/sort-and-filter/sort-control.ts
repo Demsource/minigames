@@ -50,7 +50,7 @@ export function SortControl({
 
   const button = container.querySelector('.sort-button') as HTMLButtonElement;
   const dropdown = container.querySelector('.sort-dropdown') as HTMLElement;
-  const options = container.querySelectorAll('.sort-option');
+  const options = container.querySelectorAll<HTMLElement>('.sort-option');
 
   let isOpen = false;
 
@@ -103,7 +103,7 @@ export function SortControl({
       checkmark.className = 'checkmark';
       option.insertBefore(checkmark, option.firstChild);
 
-      const sortId = option.dataset.id;
+      const sortId = (option as HTMLElement).dataset.id;
       onSortChange?.(sortId || '');
 
       closeDropdown();
