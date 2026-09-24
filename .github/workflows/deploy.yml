@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [story-1] # change this (to main) branch name when merging later
+    branches: [story-2] # change this (to main) branch name when merging later
 
 jobs:
   build-and-deploy:
