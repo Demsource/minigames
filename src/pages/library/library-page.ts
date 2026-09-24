@@ -1,10 +1,12 @@
+import { Header } from '../../components/header/header';
+import '../../components/header/header.scss';
+import { Footer } from '../../components/footer/footer';
+
 export function Library(): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';
-  container.innerHTML = `
-    <h1>Library Page</h1>
-    <p>Explore your game library here.</p>
-    <a href="/" data-link class="nav-link">Go Home</a>
-  `;
+
+  container.append(Header());
+  container.append(Footer());
   return container;
 }
