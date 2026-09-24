@@ -1,0 +1,56 @@
+@use '../../styles/tokens' as *;
+
+.page-title-section {
+  width: 100%;
+  padding: $size-5 $size-15;
+
+  .page-title-container {
+    width: 100%;
+    max-width: 1920px;
+    margin: 0 auto;
+
+    h1 {
+      font-family: $font-inter;
+      font-size: $display-large;
+      font-weight: $extra-bold;
+      color: $on-primary;
+      margin-top: 0;
+      margin-bottom: $size-2;
+      line-height: 1.2;
+    }
+
+    p {
+      font-family: $font-inter;
+      font-size: $body-large;
+      color: $on-bg-low;
+      margin-top: 0;
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: $size-4 $size-4;
+
+    .page-title-container {
+      h1 {
+        font-size: $display-medium;
+      }
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    padding: $size-4 $size-2;
+
+    .page-title-container {
+      h1 {
+        font-size: $headline-large;
+        margin-bottom: $size-1;
+      }
+
+      p {
+        font-size: $body-medium;
+      }
+    }
+  }
+}

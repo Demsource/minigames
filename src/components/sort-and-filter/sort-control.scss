@@ -1,0 +1,146 @@
+@use '../../styles/tokens' as *;
+
+.sort-control {
+  position: relative;
+  min-width: 280px;
+
+  .sort-button {
+    width: 100%;
+    padding: $size-2 $size-4;
+    border: 2px solid $on-primary;
+    border-radius: $corner-extra-large;
+    background-color: $white;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $body-large;
+    font-weight: $bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $size-3;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: $primary-low;
+      border-color: $on-primary;
+    }
+
+    &.open {
+      background-color: $primary-low;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    .sort-icon {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s ease;
+    }
+
+    &.open .sort-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  .sort-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: $white;
+    border: 2px solid $on-primary;
+    border-top: none;
+    border-bottom-left-radius: $corner-extra-large;
+    border-bottom-right-radius: $corner-extra-large;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+
+    &.open {
+      max-height: 400px;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .sort-option {
+      padding: $size-2 $size-4;
+      color: $on-primary;
+      font-family: $font-inter;
+      font-size: $body-large;
+      font-weight: $bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: $size-2;
+      transition: background-color 0.2s ease;
+      border-bottom: 1px solid $outline;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.active {
+        background-color: $primary;
+        color: $on-primary;
+      }
+
+      &.hover {
+        background-color: $surface-low;
+      }
+
+      &:hover {
+        background-color: $surface-low;
+      }
+
+      &.active:hover {
+        background-color: $primary;
+      }
+
+      .checkmark {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      span {
+        flex: 1;
+      }
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    min-width: unset;
+    width: 100%;
+
+    .sort-button {
+      padding: $size-2 $size-3;
+      font-size: $body-medium;
+    }
+
+    .sort-dropdown .sort-option {
+      padding: $size-2 $size-3;
+      font-size: $body-medium;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    .sort-button {
+      padding: $size-1 $size-2;
+      font-size: $label-large;
+    }
+
+    .sort-dropdown .sort-option {
+      padding: $size-1 $size-2;
+      font-size: $label-large;
+    }
+  }
+}
