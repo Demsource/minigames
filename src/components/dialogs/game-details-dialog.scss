@@ -1,4 +1,4 @@
-@use '../../styles/tokens' as *;
+@use '../../styles/_tokens' as *;
 
 .game-details-backdrop {
   position: fixed;
@@ -32,6 +32,8 @@
   transform: scale(0.9);
   opacity: 0;
   transition: all 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
 
   .game-details-backdrop.is-open & {
     transform: scale(1);
@@ -85,12 +87,202 @@
     }
   }
 
+  .game-info {
+    padding: $size-3;
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $size-2;
+  }
+
+  .game-title {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $headline-large;
+    font-weight: $bold;
+    color: $on-primary;
+    line-height: 1.2;
+  }
+
+  .game-meta {
+    display: flex;
+    gap: $size-3;
+    align-items: center;
+    flex-shrink: 0;
+
+    .rating,
+    .likes {
+      display: flex;
+      align-items: center;
+      gap: $size-05;
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+
+      .meta-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  .game-description {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $body-medium;
+    color: $on-bg-low;
+    line-height: 1.5;
+  }
+
+  .game-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: $size-2;
+  }
+
+  .spec-badge {
+    padding: $size-2;
+    border: 1px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $white;
+    display: flex;
+    flex-direction: column;
+    gap: $size-05;
+    text-align: center;
+    height: 56px;
+    justify-content: center;
+
+    .spec-label {
+      font-family: $font-inter;
+      font-size: $label-small;
+      font-weight: $bold;
+      color: $on-bg-low;
+      text-transform: capitalize;
+    }
+
+    .spec-value {
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+    }
+  }
+
+  .game-actions {
+    display: flex;
+    gap: $size-2;
+    margin-top: $size-1;
+  }
+
+  .btn-play-now {
+    flex: 1;
+    padding: 0;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $primary;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: $primary-high;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    &:active {
+      background-color: $primary-high;
+    }
+  }
+
+  .btn-favorite {
+    flex: 1;
+    padding: 0;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $white;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $size-05;
+    height: 48px;
+
+    .btn-heart-icon {
+      width: 18px;
+      height: 18px;
+      filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.2);
+    }
+
+    &:hover {
+      background-color: $surface;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    &:active {
+      background-color: $surface;
+    }
+
+    &.is-favorited {
+      background-color: $white;
+
+      .btn-heart-icon {
+        filter: invert(48%) sepia(77%) saturate(1452%) hue-rotate(355deg)
+          brightness(105%) contrast(109%);
+      }
+
+      &:hover {
+        background-color: $surface;
+      }
+    }
+  }
+
   @media (max-width: $breakpoint-tablet) {
     width: 90%;
     max-width: 500px;
 
     .dialog-image {
       height: 180px;
+    }
+
+    .game-info {
+      padding: $size-2 $size-3;
+      gap: $size-2;
+    }
+
+    .game-title {
+      font-size: $headline-medium;
+    }
+
+    .game-specs {
+      grid-template-columns: 1fr 1fr;
+      gap: $size-2;
     }
   }
 
@@ -105,6 +297,62 @@
     .close-button {
       width: 36px;
       height: 36px;
+    }
+
+    .game-info {
+      padding: $size-2;
+      gap: $size-2;
+    }
+
+    .game-title {
+      font-size: $headline-small;
+    }
+
+    .game-description {
+      font-size: $body-small;
+    }
+
+    .game-specs {
+      grid-template-columns: 1fr 1fr;
+      gap: $size-1;
+    }
+
+    .spec-badge {
+      padding: $size-1 $size-05;
+    }
+
+    .game-actions {
+      gap: $size-2;
+      margin-top: $size-05;
+    }
+
+    .btn-play-now {
+      flex: 1;
+      font-size: $label-medium;
+    }
+
+    .btn-favorite {
+      flex: 0 0 48px;
+      width: 48px;
+
+      .btn-text {
+        display: none;
+      }
+
+      .btn-heart-icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .game-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $size-1;
+    }
+
+    .game-meta {
+      justify-content: flex-start;
     }
   }
 }

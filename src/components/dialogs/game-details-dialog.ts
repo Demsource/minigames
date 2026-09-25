@@ -1,12 +1,17 @@
 import './game-details-dialog.scss';
 import closeButtonIcon from '../../assets/icons/close-button-wrapper.svg';
+import starIcon from '../../assets/icons/star.svg';
+import heartIcon from '../../assets/icons/heart.svg';
+import heartBlackIcon from '../../assets/icons/heart-black.svg';
 import gameData from '../../data/game-tukoni-forest-keepers.json';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
   private dialog!: HTMLElement;
+  private isLiked: boolean;
 
   constructor() {
+    this.isLiked = gameData.data.isLikedByCurrentUser;
     this.createDOM();
     this.attachEvents();
   }
@@ -18,6 +23,8 @@ class GameDetailsDialogClass {
     this.dialog = document.createElement('div');
     this.dialog.className = 'game-details-dialog';
 
+    const formattedLikes = this.formatLikesCount(gameData.data.likesCount);
+
     this.dialog.innerHTML = `
       <div class="dialog-header">
         <button type="button" class="close-button" aria-label="Close dialog">
@@ -26,6 +33,50 @@ class GameDetailsDialogClass {
       </div>
       <div class="dialog-image">
         <img src="${gameData.data.heroImage}" alt="${gameData.data.name}" />
+      </div>
+      <div class="game-info">
+        <div class="game-header">
+          <h1 class="game-title">${gameData.data.name}</h1>
+          <div class="game-meta">
+            <div class="rating">
+              <img src="${starIcon}" alt="" class="meta-icon" />
+              <span>${gameData.data.rating}</span>
+            </div>
+            <div class="likes">
+              <img src="${heartIcon}" alt="" class="meta-icon" />
+              <span>${formattedLikes}</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="game-description">${gameData.data.fullDescription}</p>
+
+        <div class="game-specs">
+          <div class="spec-badge">
+            <div class="spec-label">Genre</div>
+            <div class="spec-value">${gameData.data.specs.genre}</div>
+          </div>
+          <div class="spec-badge">
+            <div class="spec-label">Players</div>
+            <div class="spec-value">${gameData.data.specs.players}</div>
+          </div>
+          <div class="spec-badge">
+            <div class="spec-label">Duration</div>
+            <div class="spec-value">${gameData.data.specs.duration}</div>
+          </div>
+          <div class="spec-badge">
+            <div class="spec-label">Price</div>
+            <div class="spec-value">${gameData.data.specs.price}</div>
+          </div>
+        </div>
+
+        <div class="game-actions">
+          <button type="button" class="btn-play-now">Play Now</button>
+          <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
+            <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
+            <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+          </button>
+        </div>
       </div>
     `;
 
@@ -39,6 +90,13 @@ class GameDetailsDialogClass {
 
     closeButton?.addEventListener('click', () => {
       this.close();
+    });
+
+    const favoriteButton =
+      this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
+
+    favoriteButton?.addEventListener('click', () => {
+      this.toggleFavorite(favoriteButton);
     });
 
     this.backdrop.addEventListener('click', (event) => {
@@ -57,7 +115,46 @@ class GameDetailsDialogClass {
     });
   }
 
+  private toggleFavorite(button: HTMLButtonElement) {
+    this.isLiked = !this.isLiked;
+    button.classList.toggle('is-favorited');
+    const textSpan = button.querySelector('.btn-text');
+    if (textSpan) {
+      textSpan.textContent = this.isLiked
+        ? 'Remove from Favorites'
+        : 'Add to Favorites';
+    }
+  }
+
+  private formatLikesCount(count: number): string {
+    if (count >= 1_000_000) {
+      return (count / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    return count >= 1000
+      ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+      : count.toString();
+  }
+
+  private resetFavoriteState() {
+    this.isLiked = gameData.data.isLikedByCurrentUser;
+    const favoriteButton =
+      this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
+
+    if (!favoriteButton) {
+      return;
+    }
+
+    favoriteButton.classList.toggle('is-favorited', this.isLiked);
+    const textSpan = favoriteButton.querySelector('.btn-text');
+    if (textSpan) {
+      textSpan.textContent = this.isLiked
+        ? 'Remove from Favorites'
+        : 'Add to Favorites';
+    }
+  }
+
   public open() {
+    this.resetFavoriteState();
     this.backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }
