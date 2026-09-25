@@ -1,0 +1,110 @@
+@use '../../styles/tokens' as *;
+
+.game-details-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+
+  &.is-open {
+    background-color: rgba(30, 27, 58, 0.65);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.game-details-dialog {
+  position: relative;
+  width: 600px;
+  background-color: $white;
+  border: 2px solid $on-primary;
+  border-radius: $corner-large;
+  overflow: hidden;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.3s ease;
+
+  .game-details-backdrop.is-open & {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .dialog-header {
+    position: absolute;
+    top: $size-3;
+    right: $size-3;
+    z-index: 10;
+  }
+
+  .close-button {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .dialog-image {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 90%;
+    max-width: 500px;
+
+    .dialog-image {
+      height: 180px;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    width: 95%;
+    max-width: 100%;
+
+    .dialog-image {
+      height: 150px;
+    }
+
+    .close-button {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}

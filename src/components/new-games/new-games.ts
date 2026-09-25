@@ -1,6 +1,7 @@
 import './new-games.scss';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
+import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 
 import imgBubbleShooter from '../../assets/images/new-games/Game Card - Bubble Shooter.png';
 import imgCandyCrush from '../../assets/images/new-games/Game Card - Candy Crush.png';
@@ -99,6 +100,13 @@ export function NewGames(): HTMLElement {
       carousel.scrollLeft = 144;
     }
   }, 0);
+
+  const gameCards = section.querySelectorAll('.game-card');
+  for (const card of gameCards) {
+    card.addEventListener('click', () => {
+      GameDetailsDialog.open();
+    });
+  }
 
   return section;
 }
