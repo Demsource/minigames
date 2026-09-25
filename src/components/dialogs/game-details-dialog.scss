@@ -181,6 +181,63 @@
     margin-top: $size-1;
   }
 
+  .top-records-section {
+    padding: 0 $size-3 $size-3 $size-3;
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .top-records-title {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $headline-small;
+    font-weight: $bold;
+    color: $on-primary;
+  }
+
+  .top-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .top-record-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: $size-2;
+    align-items: center;
+    padding: $size-1 0;
+
+    .medal {
+      font-size: $display-small;
+      line-height: 1;
+    }
+
+    .player-name {
+      font-family: $font-inter;
+      font-size: $body-medium;
+      font-weight: $bold;
+      color: $on-primary;
+    }
+
+    .record-score {
+      font-family: $font-inter;
+      font-size: $body-medium;
+      font-weight: $bold;
+      color: $on-primary;
+      text-align: right;
+    }
+
+    .record-date {
+      font-family: $font-inter;
+      font-size: $body-small;
+      color: $on-bg-low;
+      text-align: right;
+      min-width: 80px;
+    }
+  }
+
   .btn-play-now {
     flex: 1;
     padding: 0;
@@ -353,6 +410,23 @@
 
     .game-meta {
       justify-content: flex-start;
+    }
+
+    .top-records-section {
+      padding: $size-2 $size-2 0;
+    }
+
+    .top-records-title {
+      font-size: $headline-small;
+    }
+
+    .top-record-item {
+      gap: $size-1;
+
+      .record-score,
+      .record-date {
+        font-size: $body-small;
+      }
     }
   }
 }

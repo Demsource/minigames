@@ -78,6 +78,29 @@ class GameDetailsDialogClass {
           </button>
         </div>
       </div>
+
+      <div class="top-records-section">
+        <div class="top-records-header">
+          <h2 class="top-records-title">🏆 Top Records</h2>
+        </div>
+        <div class="top-records-list">
+          ${gameData.data.topRecords
+            .map((record) => {
+              const medalEmoji = this.getMedalEmoji(record.position);
+              const formattedScore = this.formatScore(record.score);
+              const daysAgo = this.calculateDaysAgo(record.achievedAt);
+              return `
+                <div class="top-record-item">
+                  <span class="medal">${medalEmoji}</span>
+                  <span class="player-name">${record.playerName}</span>
+                  <span class="record-score">${formattedScore}</span>
+                  <span class="record-date">${daysAgo}</span>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      </div>
     `;
 
     this.backdrop.append(this.dialog);
@@ -133,6 +156,46 @@ class GameDetailsDialogClass {
     return count >= 1000
       ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
       : count.toString();
+  }
+
+  private getMedalEmoji(position: number): string {
+    switch (position) {
+      case 1: {
+        return '🥇';
+      }
+      case 2: {
+        return '🥈';
+      }
+      case 3: {
+        return '🥉';
+      }
+      default: {
+        return '';
+      }
+    }
+  }
+
+  private formatScore(score: number): string {
+    return score.toLocaleString('en-US') + ' pts';
+  }
+
+  private calculateDaysAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    }
+    if (diffDays === 1) {
+      return '1 day ago';
+    }
+    if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    }
+    const weeks = Math.floor(diffDays / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
   }
 
   private resetFavoriteState() {
