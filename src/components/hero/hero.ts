@@ -12,7 +12,7 @@ export function Hero(): HTMLElement {
           <span class="desktop-text">Discover hundreds of curated casual mini-games. Play instantly in your browser — puzzle, match 3, farm, and board classics.</span>
           <span class="mobile-text">Discover hundreds of curated casual mini-games right in your browser.</span>
         </p>
-        <button type="button" class="btn-browse">Browse Library</button>
+        <a href="/library" data-link class="btn-browse">Browse Library</a>
       </div>
     </div>
   `;

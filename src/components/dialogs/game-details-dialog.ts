@@ -3,7 +3,11 @@ import closeButtonIcon from '../../assets/icons/close-button-wrapper.svg';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
 import heartBlackIcon from '../../assets/icons/heart-black.svg';
+import sendCommentIconDefault from '../../assets/icons/send-comment-trigger-default.svg';
+import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-disabled.svg';
+import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import gameData from '../../data/game-tukoni-forest-keepers.json';
+import commentsData from '../../data/comments-tukoni-forest-keepers.json';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -101,6 +105,50 @@ class GameDetailsDialogClass {
             .join('')}
         </div>
       </div>
+
+      <div class="comments-section">
+        <div class="comments-header">
+          <h2 class="comments-title">Comments (${commentsData.data.length})</h2>
+        </div>
+
+        <div class="comment-form">
+          <div class="comment-form-avatar">U</div>
+          <textarea
+            class="comment-textarea"
+            name="comment"
+            placeholder="Write a comment..."
+            rows="1"
+          ></textarea>
+          <button type="button" class="comment-submit-btn" aria-label="Submit comment">
+            <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
+          </button>
+        </div>
+
+        <div class="comments-list">
+          ${commentsData.data
+            .map((comment) => {
+              const timeAgo = this.calculateTimeAgo(comment.createdAt);
+              const initial = comment.authorName.charAt(0).toUpperCase();
+              return `
+                <div class="comment-item">
+                  <div class="comment-avatar">${initial}</div>
+                  <div class="comment-content">
+                    <div class="comment-header">
+                      <span class="comment-author">${comment.authorName}</span>
+                      <span class="comment-time">${timeAgo}</span>
+                    </div>
+                    <p class="comment-text">${comment.text}</p>
+                    <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
+                      <img src="${heartBlackIcon}" alt="" class="like-icon" />
+                      <span class="like-count">${comment.likesCount}</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      </div>
     `;
 
     this.backdrop.append(this.dialog);
@@ -122,6 +170,45 @@ class GameDetailsDialogClass {
       this.toggleFavorite(favoriteButton);
     });
 
+    const textarea =
+      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
+    const submitButton = this.dialog.querySelector<HTMLButtonElement>(
+      '.comment-submit-btn'
+    );
+    const submitIcon =
+      submitButton?.querySelector<HTMLImageElement>('.submit-icon');
+
+    if (textarea && submitButton && submitIcon) {
+      textarea.addEventListener('input', (event) => {
+        this.autoGrowTextarea(event.target as HTMLTextAreaElement);
+        const hasText = textarea.value.trim().length > 0;
+        submitIcon.src = hasText
+          ? sendCommentIconDefault
+          : sendCommentIconDisabled;
+      });
+
+      submitButton.addEventListener('mouseenter', () => {
+        if (textarea.value.trim().length > 0) {
+          submitIcon.src = sendCommentIconHover;
+        }
+      });
+
+      submitButton.addEventListener('mouseleave', () => {
+        const hasText = textarea.value.trim().length > 0;
+        submitIcon.src = hasText
+          ? sendCommentIconDefault
+          : sendCommentIconDisabled;
+      });
+    }
+
+    const commentLikeButtons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+    for (const button of commentLikeButtons) {
+      button.addEventListener('click', () => {
+        this.toggleCommentLike(button);
+      });
+    }
+
     this.backdrop.addEventListener('click', (event) => {
       if (event.target === this.backdrop) {
         this.close();
@@ -136,6 +223,54 @@ class GameDetailsDialogClass {
         this.close();
       }
     });
+  }
+
+  private autoGrowTextarea(textarea: HTMLTextAreaElement) {
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 88);
+    textarea.style.height = `${newHeight}px`;
+  }
+
+  private toggleCommentLike(button: HTMLButtonElement) {
+    button.classList.toggle('is-liked');
+    const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
+    if (!likeCount) {
+      return;
+    }
+
+    const currentCount = Number(likeCount.textContent || '0');
+    const isLiked = button.classList.contains('is-liked');
+    likeCount.textContent = isLiked
+      ? (currentCount + 1).toString()
+      : (currentCount - 1).toString();
+  }
+
+  private calculateTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+
+    if (diffMinutes < 1) {
+      return 'just now';
+    }
+
+    if (diffMinutes < 60) {
+      return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
+    }
+
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    if (diffHours < 24) {
+      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
+    }
+
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays < 7) {
+      return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+    }
+
+    const weeks = Math.floor(diffDays / 7);
+    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
   }
 
   private toggleFavorite(button: HTMLButtonElement) {
@@ -216,8 +351,41 @@ class GameDetailsDialogClass {
     }
   }
 
+  private resetCommentState() {
+    const textarea =
+      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
+    const submitIcon = this.dialog.querySelector<HTMLImageElement>(
+      ':scope .comment-submit-btn .submit-icon'
+    );
+    const commentLikeButtons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+
+    if (textarea) {
+      textarea.value = '';
+      textarea.style.height = 'auto';
+    }
+
+    if (submitIcon) {
+      submitIcon.src = sendCommentIconDisabled;
+    }
+
+    for (const button of commentLikeButtons) {
+      const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
+      const commentId = button.dataset.commentId;
+      const commentData = commentsData.data.find(
+        (c) => c.commentId === commentId
+      );
+
+      button.classList.remove('is-liked');
+      if (likeCount && commentData) {
+        likeCount.textContent = commentData.likesCount.toString();
+      }
+    }
+  }
+
   public open() {
     this.resetFavoriteState();
+    this.resetCommentState();
     this.backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }
