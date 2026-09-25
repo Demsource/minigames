@@ -103,5 +103,10 @@ export function Pagination({
   };
 
   renderPagination();
+
+  window.addEventListener('resize', () => {
+    renderPagination();
+  });
+
   return container;
 }
