@@ -20,13 +20,13 @@ export function Library(currentRoute: string): HTMLElement {
   );
   container.append(
     FilterSortBar({
-      onFilterChange: (slug) => console.log('Filter changed:', slug),
-      onSortChange: (sortId) => console.log('Sort changed:', sortId),
+      onFilterChange: () => {},
+      onSortChange: () => {},
     })
   );
   container.append(
     GameCardsSection({
-      onDetailsClick: (slug) => console.log('Details clicked:', slug),
+      onDetailsClick: () => {},
     })
   );
 
@@ -35,7 +35,7 @@ export function Library(currentRoute: string): HTMLElement {
   paginationWrapper.append(
     Pagination({
       totalPages: 10,
-      onPageChange: (pageNumber) => console.log('Page changed:', pageNumber),
+      onPageChange: () => {},
     })
   );
   container.append(paginationWrapper);

@@ -94,6 +94,15 @@
       border-radius: $corner-large;
       overflow: hidden;
       border: 2px solid $on-primary;
+      cursor: pointer;
+      transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: $level-2;
+      }
 
       // Keep aspect ratio constraint fallback if needed, but fixed height/width overrides it.
 
@@ -145,6 +154,7 @@
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          color: $white;
         }
 
         .game-stats {
@@ -158,6 +168,7 @@
             display: flex;
             align-items: center;
             gap: $size-1;
+            color: $white;
 
             img {
               width: 16px;

@@ -1,5 +1,6 @@
 import './game-cards-section.scss';
 import { GameCard } from './game-card';
+import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 import gamesData from '../../data/all-games-seed.json';
 
 interface GameCardsSectionProperties {
@@ -23,6 +24,7 @@ export function GameCardsSection({
 
     if (detailsButton) {
       detailsButton.addEventListener('click', () => {
+        GameDetailsDialog.open();
         onDetailsClick?.(game.slug);
       });
     }

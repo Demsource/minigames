@@ -1,0 +1,685 @@
+@use '../../styles/_tokens' as *;
+
+.game-details-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: background-color 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+
+  &.is-open {
+    background-color: rgba(30, 27, 58, 0.65);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.game-details-dialog {
+  position: relative;
+  width: 600px;
+  background-color: $white;
+  border: 2px solid $on-primary;
+  border-radius: $corner-large;
+  overflow: hidden;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  .game-details-backdrop.is-open & {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  .dialog-header {
+    position: absolute;
+    top: $size-3;
+    right: $size-3;
+    z-index: 10;
+  }
+
+  .close-button {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .dialog-image {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .game-info {
+    padding: $size-3;
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $size-2;
+  }
+
+  .game-title {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $headline-large;
+    font-weight: $bold;
+    color: $on-primary;
+    line-height: 1.2;
+  }
+
+  .game-meta {
+    display: flex;
+    gap: $size-3;
+    align-items: center;
+    flex-shrink: 0;
+
+    .rating,
+    .likes {
+      display: flex;
+      align-items: center;
+      gap: $size-05;
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+
+      .meta-icon {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  .game-description {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $body-medium;
+    color: $on-bg-low;
+    line-height: 1.5;
+  }
+
+  .game-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: $size-2;
+  }
+
+  .spec-badge {
+    padding: $size-2;
+    border: 1px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $white;
+    display: flex;
+    flex-direction: column;
+    gap: $size-05;
+    text-align: center;
+    height: 56px;
+    justify-content: center;
+
+    .spec-label {
+      font-family: $font-inter;
+      font-size: $label-small;
+      font-weight: $bold;
+      color: $on-bg-low;
+      text-transform: capitalize;
+    }
+
+    .spec-value {
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+    }
+  }
+
+  .game-actions {
+    display: flex;
+    gap: $size-2;
+    margin-top: $size-1;
+  }
+
+  .top-records-section {
+    padding: 0 $size-3 $size-3 $size-3;
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .top-records-title {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $headline-small;
+    font-weight: $bold;
+    color: $on-primary;
+  }
+
+  .top-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .top-record-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: $size-2;
+    align-items: center;
+    padding: $size-1 0;
+
+    .medal {
+      font-size: $display-small;
+      line-height: 1;
+    }
+
+    .player-name {
+      font-family: $font-inter;
+      font-size: $body-medium;
+      font-weight: $bold;
+      color: $on-primary;
+    }
+
+    .record-score {
+      font-family: $font-inter;
+      font-size: $body-medium;
+      font-weight: $bold;
+      color: $on-primary;
+      text-align: right;
+    }
+
+    .record-date {
+      font-family: $font-inter;
+      font-size: $body-small;
+      color: $on-bg-low;
+      text-align: right;
+      min-width: 80px;
+    }
+  }
+
+  .comments-section {
+    padding: $size-3 $size-3 0;
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+  }
+
+  .comments-title {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $headline-small;
+    font-weight: $bold;
+    color: $on-primary;
+  }
+
+  .comment-form {
+    display: flex;
+    gap: $size-2;
+    align-items: flex-start;
+  }
+
+  .comment-form-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: $corner-full;
+    background-color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: $font-inter;
+    font-size: $label-large;
+    font-weight: $bold;
+    color: $on-primary;
+    flex-shrink: 0;
+  }
+
+  .comment-textarea {
+    flex: 1;
+    padding: $size-1 $size-2;
+    border: 1px solid $on-primary;
+    border-radius: $corner-medium;
+    font-family: $font-inter;
+    font-size: $body-medium;
+    color: $on-primary;
+    background-color: $white;
+    resize: none;
+    overflow-y: auto;
+    max-height: 88px;
+    line-height: 1.5;
+
+    &::placeholder {
+      color: $on-bg-low;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary-high;
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    scrollbar-width: none;
+  }
+
+  .comment-submit-btn {
+    min-width: $size-5;
+    min-height: $size-5;
+    width: $size-5;
+    height: $size-5;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+
+    img {
+      width: $size-5;
+      height: $size-5;
+      display: block;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+  }
+
+  .comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: $size-2;
+    padding-bottom: $size-2;
+  }
+
+  .comment-item {
+    display: flex;
+    gap: $size-2;
+    padding: $size-2;
+    border: 1px solid $outline;
+    border-radius: $corner-medium;
+    background-color: $surface-low;
+  }
+
+  .comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: $corner-full;
+    background-color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: $font-inter;
+    font-size: $body-medium;
+    font-weight: $bold;
+    color: $on-primary;
+    flex-shrink: 0;
+  }
+
+  .comment-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $size-05;
+  }
+
+  .comment-header {
+    display: flex;
+    gap: $size-1;
+    align-items: center;
+  }
+
+  .comment-author {
+    font-family: $font-inter;
+    font-size: $body-medium;
+    font-weight: $bold;
+    color: $on-primary;
+  }
+
+  .comment-time {
+    font-family: $font-inter;
+    font-size: $body-small;
+    color: $on-bg-low;
+  }
+
+  .comment-text {
+    margin: 0;
+    font-family: $font-inter;
+    font-size: $body-medium;
+    color: $on-primary;
+    line-height: 1.5;
+  }
+
+  .comment-like-btn {
+    display: flex;
+    align-items: center;
+    gap: $size-05;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: $font-inter;
+    font-size: $body-small;
+    font-weight: $bold;
+    color: $on-primary;
+    transition: color 0.2s ease;
+
+    .like-icon {
+      width: 16px;
+      height: 16px;
+      filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.2);
+      transition: filter 0.2s ease;
+    }
+
+    &:hover {
+      color: $like;
+
+      .like-icon {
+        filter: invert(48%) sepia(77%) saturate(1452%) hue-rotate(355deg)
+          brightness(105%) contrast(109%);
+      }
+    }
+
+    &.is-liked {
+      color: $like;
+
+      .like-icon {
+        filter: invert(48%) sepia(77%) saturate(1452%) hue-rotate(355deg)
+          brightness(105%) contrast(109%);
+      }
+    }
+  }
+
+  .btn-play-now {
+    flex: 1;
+    padding: 0;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $primary;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: $primary-high;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    &:active {
+      background-color: $primary-high;
+    }
+  }
+
+  .btn-favorite {
+    flex: 1;
+    padding: 0;
+    border: 2px solid $on-primary;
+    border-radius: $corner-small;
+    background-color: $white;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $label-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $size-05;
+    height: 48px;
+
+    .btn-heart-icon {
+      width: 18px;
+      height: 18px;
+      filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.2);
+    }
+
+    &:hover {
+      background-color: $surface;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    &:active {
+      background-color: $surface;
+    }
+
+    &.is-favorited {
+      background-color: $white;
+
+      .btn-heart-icon {
+        filter: invert(48%) sepia(77%) saturate(1452%) hue-rotate(355deg)
+          brightness(105%) contrast(109%);
+      }
+
+      &:hover {
+        background-color: $surface;
+      }
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 90%;
+    max-width: 500px;
+
+    .dialog-image {
+      height: 180px;
+    }
+
+    .game-info {
+      padding: $size-2 $size-3;
+      gap: $size-2;
+    }
+
+    .game-title {
+      font-size: $headline-medium;
+    }
+
+    .game-specs {
+      grid-template-columns: 1fr 1fr;
+      gap: $size-2;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    width: 95%;
+    max-width: 100%;
+
+    .dialog-image {
+      height: 150px;
+    }
+
+    .close-button {
+      width: 36px;
+      height: 36px;
+    }
+
+    .game-info {
+      padding: $size-2;
+      gap: $size-2;
+    }
+
+    .game-title {
+      font-size: $headline-small;
+    }
+
+    .game-description {
+      font-size: $body-small;
+    }
+
+    .game-specs {
+      grid-template-columns: 1fr 1fr;
+      gap: $size-1;
+    }
+
+    .spec-badge {
+      padding: $size-1 $size-05;
+    }
+
+    .game-actions {
+      gap: $size-2;
+      margin-top: $size-05;
+    }
+
+    .btn-play-now {
+      flex: 1;
+      font-size: $label-medium;
+    }
+
+    .btn-favorite {
+      flex: 0 0 48px;
+      width: 48px;
+
+      .btn-text {
+        display: none;
+      }
+
+      .btn-heart-icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .game-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $size-1;
+    }
+
+    .game-meta {
+      justify-content: flex-start;
+    }
+
+    .top-records-section {
+      padding: $size-2 $size-2 0;
+    }
+
+    .top-records-title {
+      font-size: $headline-small;
+    }
+
+    .top-record-item {
+      gap: $size-1;
+
+      .record-score,
+      .record-date {
+        font-size: $body-small;
+      }
+    }
+
+    .comments-section {
+      padding: $size-2 $size-2 0;
+    }
+
+    .comments-title {
+      font-size: $headline-small;
+    }
+
+    .comment-form {
+      gap: $size-1;
+    }
+
+    .comment-form-avatar {
+      width: 36px;
+      height: 36px;
+      font-size: $label-large;
+    }
+
+    .comment-textarea {
+      font-size: $body-small;
+      padding: $size-05 $size-1;
+    }
+
+    .comment-submit-btn {
+      width: $size-5;
+      height: $size-5;
+
+      img {
+        width: $size-5;
+        height: $size-5;
+      }
+    }
+
+    .comment-item {
+      gap: $size-1;
+      padding: $size-1;
+    }
+
+    .comment-avatar {
+      width: 36px;
+      height: 36px;
+      font-size: $label-large;
+    }
+
+    .comment-author {
+      font-size: $body-small;
+    }
+
+    .comment-time {
+      font-size: $label-small;
+    }
+
+    .comment-text {
+      font-size: $body-small;
+    }
+  }
+}
