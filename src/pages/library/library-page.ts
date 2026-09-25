@@ -2,6 +2,7 @@ import { Header } from '../../components/header/header';
 import '../../components/header/header.scss';
 import { PageTitle } from '../../components/page-title/page-title';
 import { FilterSortBar } from '../../components/sort-and-filter/filter-sort-bar';
+import { GameCardsSection } from '../../components/game-cards/game-cards-section';
 import { Footer } from '../../components/footer/footer';
 import './library-page.scss';
 
@@ -20,6 +21,11 @@ export function Library(currentRoute: string): HTMLElement {
     FilterSortBar({
       onFilterChange: (slug) => console.log('Filter changed:', slug),
       onSortChange: (sortId) => console.log('Sort changed:', sortId),
+    })
+  );
+  container.append(
+    GameCardsSection({
+      onDetailsClick: (slug) => console.log('Details clicked:', slug),
     })
   );
   container.append(Footer());
