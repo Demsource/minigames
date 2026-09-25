@@ -1,0 +1,86 @@
+@use '../../styles/tokens' as *;
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $size-2;
+  padding: $size-5 $size-15;
+  background-color: $bg;
+
+  .page-btn,
+  .arrow-btn {
+    width: 44px;
+    height: 44px;
+    border: 2px solid $on-primary;
+    border-radius: $corner-full;
+    background-color: $white;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $body-large;
+    font-weight: $bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled):not(.active) {
+      background-color: $primary-low;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+
+    &:disabled,
+    &.disabled {
+      cursor: not-allowed;
+      border-color: $outline-variant;
+      background-color: $surface-low;
+      color: $outline-variant;
+    }
+  }
+
+  .page-btn {
+    &.active {
+      background-color: $on-primary;
+      color: $white;
+      border-color: $on-primary;
+    }
+  }
+
+  .arrow-btn {
+    font-size: $label-large;
+
+    span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: $size-4 $size-4;
+
+    .page-btn,
+    .arrow-btn {
+      width: 40px;
+      height: 40px;
+      font-size: $body-medium;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    gap: $size-1;
+    padding: $size-3 $size-2;
+
+    .page-btn,
+    .arrow-btn {
+      width: 36px;
+      height: 36px;
+      font-size: $label-large;
+    }
+  }
+}

@@ -3,6 +3,7 @@ import '../../components/header/header.scss';
 import { PageTitle } from '../../components/page-title/page-title';
 import { FilterSortBar } from '../../components/sort-and-filter/filter-sort-bar';
 import { GameCardsSection } from '../../components/game-cards/game-cards-section';
+import { Pagination } from '../../components/pagination/pagination';
 import { Footer } from '../../components/footer/footer';
 import './library-page.scss';
 
@@ -28,6 +29,17 @@ export function Library(currentRoute: string): HTMLElement {
       onDetailsClick: (slug) => console.log('Details clicked:', slug),
     })
   );
+
+  const paginationWrapper = document.createElement('div');
+  paginationWrapper.className = 'pagination-wrapper';
+  paginationWrapper.append(
+    Pagination({
+      totalPages: 10,
+      onPageChange: (pageNumber) => console.log('Page changed:', pageNumber),
+    })
+  );
+  container.append(paginationWrapper);
+
   container.append(Footer());
   return container;
 }
