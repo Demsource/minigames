@@ -77,7 +77,6 @@ class CarouselSlider {
   private dragOffset = 0;
   private holdInterval: ReturnType<typeof setInterval> | undefined;
   private autoAdvanceInterval: ReturnType<typeof setInterval> | undefined;
-  private gameCount = 5;
 
   constructor(track: HTMLElement) {
     this.track = track;
@@ -117,11 +116,6 @@ class CarouselSlider {
 
     clearInterval(this.autoAdvanceInterval);
     this.autoAdvanceInterval = undefined;
-  }
-
-  private resetAutoAdvance() {
-    this.stopAutoAdvance();
-    this.startAutoAdvance();
   }
 
   private updateCardWidth() {
