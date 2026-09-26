@@ -1,0 +1,70 @@
+@use '../../styles/tokens' as *;
+
+.filter-chips {
+  flex: 1;
+  min-width: 0;
+
+  .chips-scroll-container {
+    display: flex;
+    gap: $size-2;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    padding-bottom: $size-1;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    scrollbar-width: none;
+  }
+
+  .chip {
+    flex-shrink: 0;
+    padding: $size-1 $size-4;
+    border: 2px solid $on-primary;
+    border-radius: $corner-extra-large;
+    background-color: $white;
+    color: $on-primary;
+    font-family: $font-inter;
+    font-size: $body-large;
+    font-weight: $bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover:not(.active) {
+      background-color: $surface-low;
+    }
+
+    &.active {
+      background-color: $primary;
+      border-color: $on-primary;
+      color: $on-primary;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $primary-high;
+      outline-offset: 2px;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    .chips-scroll-container {
+      gap: $size-2;
+    }
+
+    .chip {
+      padding: $size-05 $size-3;
+      font-size: $body-medium;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    .chip {
+      padding: $size-05 $size-2;
+      font-size: $label-large;
+      border-width: 2px;
+    }
+  }
+}

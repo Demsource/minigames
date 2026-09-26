@@ -2,7 +2,7 @@ import logoUrl from '../../assets/icons/logo-minigames.svg';
 import { BurgerMenu } from './burger-menu/burger-menu';
 import { AuthDialog } from '../dialogs/auth-dialog';
 
-export function Header(): HTMLElement {
+export function Header(currentRoute: string): HTMLElement {
   const headerElement = document.createElement('header');
   headerElement.className = 'site-header';
 
@@ -14,10 +14,10 @@ export function Header(): HTMLElement {
         </div>
         <span class="header-logo-text">MiniGames</span>
       </a>
-      
+
       <nav class="header-nav">
-        <a href="/" class="nav-item active" data-link>Home</a>
-        <a href="/" class="nav-item" data-link>Library</a>
+        <a href="/" class="nav-item${currentRoute === '/' ? ' active' : ''}" data-link>Home</a>
+        <a href="/library" class="nav-item${currentRoute === '/library' ? ' active' : ''}" data-link>Library</a>
         <a href="/" class="nav-item" data-link>Tournaments</a>
         <a href="/" class="nav-item" data-link>Community</a>
       </nav>
@@ -48,7 +48,7 @@ export function Header(): HTMLElement {
     AuthDialog.open();
   });
 
-  const burgerMenu = new BurgerMenu();
+  const burgerMenu = new BurgerMenu(currentRoute);
   document.body.append(burgerMenu.getElement());
 
   const burgerToggle = headerElement.querySelector('.burger-toggle');

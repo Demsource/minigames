@@ -22,10 +22,10 @@ export function Footer(): HTMLElement {
       <div class="footer-links-wrapper">
         <div class="footer-col explore">
           <h3>Explore</h3>
-          <a href="/">Home</a>
-          <a href="/">Library</a>
-          <a href="/">Categories</a>
-          <a href="/">Tournaments</a>
+          <a href="/" data-link>Home</a>
+          <a href="/library" data-link>Library</a>
+          <a href="/" data-link>Categories</a>
+          <a href="/" data-link>Tournaments</a>
         </div>
         <div class="footer-col company">
           <h3>Company</h3>
