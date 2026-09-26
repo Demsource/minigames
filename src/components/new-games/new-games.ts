@@ -76,14 +76,52 @@ class CarouselSlider {
   private dragStartX = 0;
   private dragOffset = 0;
   private holdInterval: ReturnType<typeof setInterval> | undefined;
-  private maxIndex = 0;
+  private autoAdvanceInterval: ReturnType<typeof setInterval> | undefined;
+  private gameCount = 5;
 
   constructor(track: HTMLElement) {
     this.track = track;
     this.container = track.parentElement as HTMLElement;
     this.updateCardWidth();
     this.attachDragListeners();
-    setTimeout(() => this.calculateMaxIndex(), 0);
+    this.startAutoAdvance();
+  }
+
+  private autoAdvance() {
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const cardStep = this.cardWidth + this.gap;
+    const pixelsPerStep = 100;
+
+    // Convert 100px to index increment
+    const indexIncrement = pixelsPerStep / cardStep;
+    this.currentIndex += indexIncrement;
+
+    // Wrap when reaching the left edge (maxOffset)
+    if ((this.cardWidth + this.gap) * this.currentIndex >= maxOffset) {
+      this.currentIndex = 0;
+    }
+
+    this.updatePosition();
+  }
+
+  private startAutoAdvance() {
+    this.autoAdvanceInterval = setInterval(() => this.autoAdvance(), 4000);
+  }
+
+  private stopAutoAdvance() {
+    if (!this.autoAdvanceInterval) {
+      return;
+    }
+
+    clearInterval(this.autoAdvanceInterval);
+    this.autoAdvanceInterval = undefined;
+  }
+
+  private resetAutoAdvance() {
+    this.stopAutoAdvance();
+    this.startAutoAdvance();
   }
 
   private updateCardWidth() {
@@ -92,16 +130,6 @@ class CarouselSlider {
     this.cardWidth = card.offsetWidth;
     const styles = globalThis.getComputedStyle(this.container);
     this.gap = Number(styles.gap || '4');
-  }
-
-  private calculateMaxIndex() {
-    const containerWidth = this.container.clientWidth;
-    const trackWidth = this.track.scrollWidth;
-    const maxOffset = trackWidth - containerWidth;
-    this.maxIndex = Math.max(
-      0,
-      Math.floor(maxOffset / (this.cardWidth + this.gap))
-    );
   }
 
   private attachDragListeners() {
@@ -127,11 +155,11 @@ class CarouselSlider {
     const baseOffset = (this.cardWidth + this.gap) * this.currentIndex;
     let translateX = baseOffset - this.dragOffset;
 
-    // Clamp to valid range
-    const maxOffset = Math.max(
-      0,
-      this.track.scrollWidth - this.container.clientWidth
-    );
+    // Clamp to valid range based on container and track dimensions
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+
     translateX = Math.max(0, Math.min(translateX, maxOffset));
 
     this.track.style.transform = `translateX(-${translateX}px)`;
@@ -144,29 +172,87 @@ class CarouselSlider {
 
     const threshold = (this.cardWidth + this.gap) * 0.2;
 
-    if (this.dragOffset > threshold && this.currentIndex > 0) {
+    if (this.dragOffset > threshold) {
       this.currentIndex--;
     } else if (this.dragOffset < -threshold) {
       this.currentIndex++;
     }
 
     this.dragOffset = 0;
-    this.updatePosition();
+
+    // Apply edge wrapping logic
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const currentOffset = (this.cardWidth + this.gap) * this.currentIndex;
+
+    if (currentOffset >= maxOffset) {
+      this.track.style.transition = 'none';
+      this.currentIndex = 0;
+      this.updatePosition();
+      setTimeout(() => {
+        this.track.style.transition = 'transform 0.1s ease';
+      }, 10);
+    } else if (this.currentIndex < 0) {
+      this.track.style.transition = 'none';
+      const cardStep = this.cardWidth + this.gap;
+      this.currentIndex = Math.floor(maxOffset / cardStep);
+      this.updatePosition();
+      setTimeout(() => {
+        this.track.style.transition = 'transform 0.1s ease';
+      }, 10);
+    } else {
+      this.updatePosition();
+    }
   }
 
   private updatePosition() {
-    const offset = (this.cardWidth + this.gap) * this.currentIndex;
+    const cardStep = this.cardWidth + this.gap;
+    const offset = cardStep * this.currentIndex;
     this.track.style.transform = `translateX(-${offset}px)`;
   }
 
   next() {
-    this.currentIndex = Math.min(this.currentIndex + 3, this.maxIndex);
+    this.currentIndex += 3;
     this.updatePosition();
+
+    // Check if track's right edge reached container's right edge
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const currentOffset = (this.cardWidth + this.gap) * this.currentIndex;
+
+    if (!(currentOffset >= maxOffset)) {
+      return;
+    }
+
+    this.track.style.transition = 'none';
+    this.currentIndex = 0;
+    this.updatePosition();
+    setTimeout(() => {
+      this.track.style.transition = 'transform 0.1s ease';
+    }, 10);
   }
 
   prev() {
-    this.currentIndex = Math.max(this.currentIndex - 3, 0);
-    this.updatePosition();
+    this.currentIndex -= 3;
+
+    // Check if we've gone before the beginning
+    if (this.currentIndex < 0) {
+      this.track.style.transition = 'none';
+      // Calculate max index to show rightmost content
+      const containerWidth = this.container.clientWidth;
+      const trackWidth = this.track.scrollWidth;
+      const maxOffset = trackWidth - containerWidth;
+      const cardStep = this.cardWidth + this.gap;
+      this.currentIndex = Math.floor(maxOffset / cardStep);
+      this.updatePosition();
+      setTimeout(() => {
+        this.track.style.transition = 'transform 0.1s ease';
+      }, 10);
+    } else {
+      this.updatePosition();
+    }
   }
 
   wasDragged(): boolean {
@@ -175,12 +261,14 @@ class CarouselSlider {
 
   startHoldNext() {
     if (this.holdInterval) return;
-    this.holdInterval = setInterval(() => this.next(), 100);
+    this.next();
+    this.holdInterval = setInterval(() => this.next(), 250);
   }
 
   startHoldPrev() {
     if (this.holdInterval) return;
-    this.holdInterval = setInterval(() => this.prev(), 100);
+    this.prev();
+    this.holdInterval = setInterval(() => this.prev(), 250);
   }
 
   stopHold() {
