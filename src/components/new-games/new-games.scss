@@ -69,14 +69,13 @@
   }
 
   .carousel-container {
-    display: flex;
-    gap: $size-1;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow: hidden;
+    width: 100%;
 
-    &::-webkit-scrollbar {
-      display: none;
+    .carousel-track {
+      display: flex;
+      gap: $size-1;
+      transition: transform 0.1s ease;
     }
 
     .game-card {
