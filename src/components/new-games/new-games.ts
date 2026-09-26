@@ -146,6 +146,7 @@ class CarouselSlider {
     this.dragStartX = event.clientX;
     this.dragOffset = 0;
     this.track.style.transition = 'none';
+    this.stopAutoAdvance();
   }
 
   private onDragMove(event: MouseEvent) {
@@ -204,6 +205,8 @@ class CarouselSlider {
     } else {
       this.updatePosition();
     }
+
+    this.startAutoAdvance();
   }
 
   private updatePosition() {
@@ -261,12 +264,14 @@ class CarouselSlider {
 
   startHoldNext() {
     if (this.holdInterval) return;
+    this.stopAutoAdvance();
     this.next();
     this.holdInterval = setInterval(() => this.next(), 250);
   }
 
   startHoldPrev() {
     if (this.holdInterval) return;
+    this.stopAutoAdvance();
     this.prev();
     this.holdInterval = setInterval(() => this.prev(), 250);
   }
@@ -278,6 +283,7 @@ class CarouselSlider {
 
     clearInterval(this.holdInterval);
     this.holdInterval = undefined;
+    this.startAutoAdvance();
   }
 }
 
