@@ -12,6 +12,7 @@ import commentsData from '../../data/comments-tukoni-forest-keepers.json';
 import { apiCall, GameDetails, GameDetailsResponse } from '../../services/api';
 import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
+import { ErrorBanner } from '../../components/error-banner/error-banner';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -158,37 +159,51 @@ class GameDetailsDialogClass {
       </div>
     `;
 
-    const commentsTitle = this.dialog.querySelector(
-      '.comments-title'
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
     ) as HTMLElement;
-    commentsTitle.textContent = `Comments (${commentsData.data.length})`;
+    commentsSection.innerHTML = `
+      <div class="comments-header">
+        <h2 class="comments-title">Comments (${commentsData.data.length})</h2>
+      </div>
 
-    const commentsList = this.dialog.querySelector(
-      '.comments-list'
-    ) as HTMLElement;
-    commentsList.innerHTML = `
-      ${commentsData.data
-        .map((comment) => {
-          const timeAgo = this.calculateTimeAgo(comment.createdAt);
-          const initial = comment.authorName.charAt(0).toUpperCase();
-          return `
-            <div class="comment-item">
-              <div class="comment-avatar">${initial}</div>
-              <div class="comment-content">
-                <div class="comment-header">
-                  <span class="comment-author">${comment.authorName}</span>
-                  <span class="comment-time">${timeAgo}</span>
+      <div class="comment-form">
+        <div class="comment-form-avatar">U</div>
+        <textarea
+          class="comment-textarea"
+          name="comment"
+          placeholder="Write a comment..."
+          rows="1"
+        ></textarea>
+        <button type="button" class="comment-submit-btn" aria-label="Submit comment">
+          <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
+        </button>
+      </div>
+
+      <div class="comments-list">
+        ${commentsData.data
+          .map((comment) => {
+            const timeAgo = this.calculateTimeAgo(comment.createdAt);
+            const initial = comment.authorName.charAt(0).toUpperCase();
+            return `
+              <div class="comment-item">
+                <div class="comment-avatar">${initial}</div>
+                <div class="comment-content">
+                  <div class="comment-header">
+                    <span class="comment-author">${comment.authorName}</span>
+                    <span class="comment-time">${timeAgo}</span>
+                  </div>
+                  <p class="comment-text">${comment.text}</p>
+                  <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
+                    <img src="${heartBlackIcon}" alt="" class="like-icon" />
+                    <span class="like-count">${comment.likesCount}</span>
+                  </button>
                 </div>
-                <p class="comment-text">${comment.text}</p>
-                <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
-                  <img src="${heartBlackIcon}" alt="" class="like-icon" />
-                  <span class="like-count">${comment.likesCount}</span>
-                </button>
               </div>
-            </div>
-          `;
-        })
-        .join('')}
+            `;
+          })
+          .join('')}
+      </div>
     `;
   }
 
@@ -472,6 +487,63 @@ class GameDetailsDialogClass {
     commentsSection.innerHTML = skeletonCommentsContent;
   }
 
+  private showError() {
+    const gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    const topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
+    ) as HTMLElement;
+
+    gameInfoContainer.replaceChildren();
+    topRecordsContainer.replaceChildren();
+    commentsSection.replaceChildren();
+
+    const errorBanner = ErrorBanner({
+      message: 'Failed to load game details. Please try again.',
+      onRetry: async () => {
+        this.showSkeleton();
+        await this.loadGameData();
+      },
+      isDismissible: true,
+    });
+
+    gameInfoContainer.append(errorBanner);
+  }
+
+  private async loadGameData() {
+    try {
+      const response = await apiCall<GameDetailsResponse>(
+        `/api/games/${this.currentGameSlug}`
+      );
+      this.renderGameContent(response.data);
+
+      try {
+        this.attachGameActionEvents();
+      } catch (error) {
+        console.error('Error attaching game action events:', error);
+      }
+
+      try {
+        this.resetFavoriteState();
+      } catch (error) {
+        console.error('Error resetting favorite state:', error);
+      }
+
+      try {
+        this.resetCommentState();
+      } catch (error) {
+        console.error('Error resetting comment state:', error);
+      }
+    } catch (error) {
+      console.error('Failed to load game details:', error);
+      this.showError();
+    }
+  }
+
   public setGameSlug(slug: string) {
     this.currentGameSlug = slug;
   }
@@ -486,17 +558,7 @@ class GameDetailsDialogClass {
     document.body.style.overflow = 'hidden';
     this.showSkeleton();
 
-    try {
-      const response = await apiCall<GameDetailsResponse>(
-        `/api/games/${this.currentGameSlug}`
-      );
-      this.renderGameContent(response.data);
-      this.attachGameActionEvents();
-      this.resetFavoriteState();
-      this.resetCommentState();
-    } catch (error) {
-      console.error('Failed to load game details:', error);
-    }
+    await this.loadGameData();
   }
 
   public close() {
