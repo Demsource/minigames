@@ -18,10 +18,11 @@ export function GameCard(game: GameCardData): HTMLElement {
   card.className = 'game-card';
 
   const formattedLikes = formatLikesCount(game.likesCount);
+  const imageSource = `/minigames${game.cardImage}`;
 
   card.innerHTML = `
     <div class="card-image">
-      <img src="${game.cardImage}" alt="${game.name}" />
+      <img src="${imageSource}" alt="${game.name}" />
     </div>
     <div class="card-content">
       <div class="card-header">

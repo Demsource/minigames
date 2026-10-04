@@ -11,6 +11,12 @@ export interface Game {
   cardImage: string;
 }
 
+export interface Category {
+  slug: string;
+  label: string;
+  isDefault: boolean;
+}
+
 export interface ApiResponse {
   data: Game[];
   meta: {
@@ -21,6 +27,14 @@ export interface ApiResponse {
     appliedFilter: {
       featured: boolean;
     };
+  };
+}
+
+export interface CategoriesResponse {
+  data: Category[];
+  meta: {
+    totalItems: number;
+    description: string;
   };
 }
 
