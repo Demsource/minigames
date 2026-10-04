@@ -75,7 +75,13 @@ export class Router {
     const parameters = new URLSearchParams(globalThis.location.search);
     const redirectedPath = parameters.get('p');
     if (redirectedPath) {
-      globalThis.history.replaceState({}, '', this.base + redirectedPath);
+      const redirectedQuery = parameters.get('q');
+      const search = redirectedQuery ? `?${redirectedQuery}` : '';
+      globalThis.history.replaceState(
+        {},
+        '',
+        this.base + redirectedPath + search + globalThis.location.hash
+      );
     }
 
     globalThis.addEventListener('popstate', () => this.handleRoute());
