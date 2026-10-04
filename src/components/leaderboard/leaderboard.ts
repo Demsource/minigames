@@ -1,7 +1,8 @@
 import './leaderboard.scss';
+import '../skeletons/skeleton-loader-leaderboard.scss';
 import { apiCall } from '../../services/api';
 import { ErrorBanner } from '../error-banner/error-banner';
-import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
+import { createSkeletonLeaderboardGroup } from '../skeletons/skeleton-loader-leaderboard';
 import { EmptyState } from '../empty-state/empty-state';
 
 interface LeaderboardPlayer {
@@ -110,7 +111,7 @@ export function Leaderboard(): HTMLElement {
 
   const skeletonContainer = document.createElement('div');
   skeletonContainer.className = 'leaderboard-content';
-  skeletonContainer.append(createSkeletonGroup(5));
+  skeletonContainer.append(createSkeletonLeaderboardGroup(5));
   tableContainer.append(skeletonContainer);
 
   const loadLeaderboard = async () => {

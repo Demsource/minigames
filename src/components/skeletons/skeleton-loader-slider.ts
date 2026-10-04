@@ -1,5 +1,3 @@
-import './skeleton-loader.scss';
-
 export interface SkeletonConfig {
   width?: string;
   height?: string;
@@ -7,7 +5,7 @@ export interface SkeletonConfig {
   isWide?: boolean;
 }
 
-export function SkeletonCard(config: SkeletonConfig = {}): HTMLElement {
+export function SkeletonSliderCard(config: SkeletonConfig = {}): HTMLElement {
   const {
     width = '288px',
     height = '384px',
@@ -16,21 +14,21 @@ export function SkeletonCard(config: SkeletonConfig = {}): HTMLElement {
   } = config;
 
   const card = document.createElement('div');
-  card.className = 'skeleton-card';
+  card.className = 'skeleton-slider-card';
   if (isWide) {
-    card.classList.add('skeleton-card-wide');
+    card.classList.add('skeleton-slider-card-wide');
   }
   card.style.width = isWide ? '816px' : width;
   card.style.height = height;
   card.style.borderRadius = borderRadius;
 
   card.innerHTML = `
-    <div class="skeleton-image"></div>
-    <div class="skeleton-overlay">
-      <div class="skeleton-title"></div>
-      <div class="skeleton-stats">
-        <div class="skeleton-stat"></div>
-        <div class="skeleton-stat"></div>
+    <div class="skeleton-slider-image"></div>
+    <div class="skeleton-slider-overlay">
+      <div class="skeleton-slider-title"></div>
+      <div class="skeleton-slider-stats">
+        <div class="skeleton-slider-stat"></div>
+        <div class="skeleton-slider-stat"></div>
       </div>
     </div>
   `;
@@ -38,15 +36,15 @@ export function SkeletonCard(config: SkeletonConfig = {}): HTMLElement {
   return card;
 }
 
-export function createSkeletonGroup(
+export function createSkeletonSliderGroup(
   count: number,
   wideIndex?: number
 ): HTMLElement {
   const group = document.createElement('div');
-  group.className = 'skeleton-group';
+  group.className = 'skeleton-slider-group';
 
   for (let index = 0; index < count; index++) {
-    group.append(SkeletonCard({ isWide: index === wideIndex }));
+    group.append(SkeletonSliderCard({ isWide: index === wideIndex }));
   }
 
   return group;

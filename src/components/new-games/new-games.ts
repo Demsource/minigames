@@ -1,9 +1,10 @@
 import './new-games.scss';
+import '../skeletons/skeleton-loader-slider.scss';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 import { apiCall, type Game, type ApiResponse } from '../../services/api';
-import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
+import { createSkeletonSliderGroup } from '../skeletons/skeleton-loader-slider';
 import { ErrorBanner } from '../error-banner/error-banner';
 import { EmptyState } from '../empty-state/empty-state';
 
@@ -438,7 +439,7 @@ export function NewGames(): HTMLElement {
   `;
 
   const track = section.querySelector('.carousel-track') as HTMLElement;
-  track.append(createSkeletonGroup(5, 2));
+  track.append(createSkeletonSliderGroup(5, 2));
 
   const buttonPrevious = section.querySelector(
     '.btn-prev'
