@@ -1,22 +1,23 @@
 import './filter-chips.scss';
-import categoriesData from '../../data/categories.json';
+import { Category } from '../../services/api';
 
 interface FilterChipsProperties {
+  categories: Category[];
   onChipClick?: (slug: string) => void;
 }
 
 export function FilterChips({
+  categories,
   onChipClick,
 }: FilterChipsProperties): HTMLElement {
   const container = document.createElement('div');
   container.className = 'filter-chips';
 
-  const defaultCategory =
-    categoriesData.data.find((c) => c.isDefault) || categoriesData.data[0];
+  const defaultCategory = categories.find((c) => c.isDefault) || categories[0];
 
   container.innerHTML = `
     <div class="chips-scroll-container">
-      ${categoriesData.data
+      ${categories
         .map(
           (category) => `
         <button
