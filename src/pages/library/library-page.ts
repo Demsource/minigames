@@ -3,6 +3,11 @@ import '../../components/header/header.scss';
 import { PageTitle } from '../../components/page-title/page-title';
 import { FilterSortBar } from '../../components/sort-and-filter/filter-sort-bar';
 import { setActiveFilterChip } from '../../components/sort-and-filter/filter-chips';
+import {
+  DEFAULT_SORT_ID,
+  isValidSortId,
+  setActiveSortOption,
+} from '../../components/sort-and-filter/sort-control';
 import { router } from '../../app/router';
 import { GameCardsSection } from '../../components/game-cards/game-cards-section';
 import { Pagination } from '../../components/pagination/pagination';
@@ -27,7 +32,7 @@ export function Library(currentRoute: string): HTMLElement {
 
   let categories: Category[] = [];
   let currentCategory = 'all';
-  let currentSort = 'rating-desc';
+  let currentSort = DEFAULT_SORT_ID;
   let currentPage = 1;
 
   container.append(Header(currentRoute));
@@ -130,16 +135,25 @@ export function Library(currentRoute: string): HTMLElement {
       : defaultCategorySlug;
   };
 
+  // Unknown or missing sort → default
+  const getSortFromUrl = (): string => {
+    const sortId = router.getQuery().get('sort');
+    return sortId && isValidSortId(sortId) ? sortId : DEFAULT_SORT_ID;
+  };
+
   router.subscribe(
     ({ pathChanged }) => {
       if (pathChanged || categories.length === 0) return;
 
       const slug = getCategoryFromUrl();
-      if (slug === currentCategory) return;
+      const sortId = getSortFromUrl();
+      if (slug === currentCategory && sortId === currentSort) return;
 
       currentCategory = slug;
+      currentSort = sortId;
       currentPage = 1;
       setActiveFilterChip(filterSortBarContainer, slug);
+      setActiveSortOption(filterSortBarContainer, sortId);
       loadGames();
     },
     { pageScoped: true }
@@ -156,17 +170,29 @@ export function Library(currentRoute: string): HTMLElement {
       }
 
       currentCategory = getCategoryFromUrl();
+      currentSort = getSortFromUrl();
 
-      // Drop an invalid or redundant category from the URL
-      const urlCategory = router.getQuery().get('category');
-      if (urlCategory && urlCategory !== currentCategory) {
-        router.setQuery({ category: undefined }, { replace: true });
+      // Drop invalid category / sort values from the URL
+      const urlQuery = router.getQuery();
+      const urlCategory = urlQuery.get('category');
+      const urlSort = urlQuery.get('sort');
+      const hasInvalidCategory = urlCategory && urlCategory !== currentCategory;
+      const hasInvalidSort = urlSort && urlSort !== currentSort;
+      if (hasInvalidCategory || hasInvalidSort) {
+        router.setQuery(
+          {
+            category: hasInvalidCategory ? undefined : urlCategory || undefined,
+            sort: hasInvalidSort ? undefined : urlSort || undefined,
+          },
+          { replace: true }
+        );
       }
 
       filterSortBarContainer.append(
         FilterSortBar({
           categories,
           activeCategory: currentCategory,
+          activeSort: currentSort,
           onFilterChange: (slug: string) => {
             router.setQuery({
               category: slug === defaultCategorySlug ? undefined : slug,
@@ -174,9 +200,10 @@ export function Library(currentRoute: string): HTMLElement {
             });
           },
           onSortChange: (sortId: string) => {
-            currentSort = sortId;
-            currentPage = 1;
-            loadGames();
+            router.setQuery({
+              sort: sortId === DEFAULT_SORT_ID ? undefined : sortId,
+              page: undefined,
+            });
           },
         })
       );

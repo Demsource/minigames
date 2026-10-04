@@ -6,6 +6,7 @@ import { Category } from '../../services/api';
 interface FilterSortBarProperties {
   categories: Category[];
   activeCategory?: string;
+  activeSort?: string;
   onFilterChange?: (slug: string) => void;
   onSortChange?: (sortId: string) => void;
 }
@@ -13,6 +14,7 @@ interface FilterSortBarProperties {
 export function FilterSortBar({
   categories,
   activeCategory,
+  activeSort,
   onFilterChange,
   onSortChange,
 }: FilterSortBarProperties): HTMLElement {
@@ -26,7 +28,7 @@ export function FilterSortBar({
       onChipClick: onFilterChange,
     })
   );
-  container.append(SortControl({ onSortChange }));
+  container.append(SortControl({ activeSortId: activeSort, onSortChange }));
 
   return container;
 }
