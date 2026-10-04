@@ -1,5 +1,27 @@
 import './leaderboard.scss';
-import leaderboardJson from '../../data/leaderboard.json';
+import '../skeletons/skeleton-loader-leaderboard.scss';
+import { apiCall } from '../../services/api';
+import { ErrorBanner } from '../error-banner/error-banner';
+import { createSkeletonLeaderboardGroup } from '../skeletons/skeleton-loader-leaderboard';
+import { EmptyState } from '../empty-state/empty-state';
+
+interface LeaderboardPlayer {
+  rank: number;
+  playerName: string;
+  gamesPlayed: number;
+  totalScore: number;
+  streakDays: number;
+  favoriteGameSlug: string;
+  favoriteGameName: string;
+}
+
+interface LeaderboardResponse {
+  data: LeaderboardPlayer[];
+  meta: {
+    totalItems: number;
+    description: string;
+  };
+}
 
 function formatScoreDesktop(score: number): string {
   return score.toLocaleString('en-US');
@@ -16,13 +38,8 @@ function getInitials(name: string): string {
     : name.slice(0, 2).toUpperCase();
 }
 
-export function Leaderboard(): HTMLElement {
-  const section = document.createElement('section');
-  section.className = 'leaderboard-section';
-
-  const players = leaderboardJson.data;
-
-  const rowsHtml = players
+function createLeaderboardRows(players: LeaderboardPlayer[]): string {
+  return players
     .map(
       (player) => `
     <div class="lb-row lb-data rank-${player.rank}">
@@ -53,6 +70,11 @@ export function Leaderboard(): HTMLElement {
   `
     )
     .join('');
+}
+
+export function Leaderboard(): HTMLElement {
+  const section = document.createElement('section');
+  section.className = 'leaderboard-section';
 
   section.innerHTML = `
     <header class="section-header">
@@ -79,9 +101,51 @@ export function Leaderboard(): HTMLElement {
         <div class="lb-cell">STREAK</div>
         <div class="lb-cell col-favorite">FAVORITE GAME</div>
       </div>
-      ${rowsHtml}
     </div>
   `;
+
+  const tableContainer = section.querySelector(
+    '.leaderboard-table-container'
+  ) as HTMLElement;
+  const headerRow = section.querySelector('.lb-header') as HTMLElement;
+
+  const skeletonContainer = document.createElement('div');
+  skeletonContainer.className = 'leaderboard-content';
+  skeletonContainer.append(createSkeletonLeaderboardGroup(5));
+  tableContainer.append(skeletonContainer);
+
+  const loadLeaderboard = async () => {
+    try {
+      const response = await apiCall<LeaderboardResponse>('/api/leaderboard');
+
+      if (response.data.length === 0) {
+        skeletonContainer.replaceWith(
+          EmptyState({
+            title: 'No players available',
+            message: 'There are no players to display at the moment.',
+            isDismissible: true,
+          })
+        );
+        return;
+      }
+
+      const rowsHtml = createLeaderboardRows(response.data);
+      headerRow.insertAdjacentHTML('afterend', rowsHtml);
+
+      skeletonContainer.remove();
+    } catch (error) {
+      console.error('Failed to load leaderboard:', error);
+      skeletonContainer.replaceWith(
+        ErrorBanner({
+          message: 'Failed to load leaderboard. Please try again.',
+          onRetry: loadLeaderboard,
+          isDismissible: true,
+        })
+      );
+    }
+  };
+
+  loadLeaderboard();
 
   return section;
 }
