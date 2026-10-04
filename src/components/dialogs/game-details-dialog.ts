@@ -34,14 +34,17 @@ class GameDetailsDialogClass {
   private commentsLoadFailed: boolean = false;
   // True when the history entry below is the page without the dialog
   private canCloseWithBack: boolean = false;
-  private hasHandledInitialRoute: boolean = false;
+  private hasSeenUrlWithoutGame: boolean = false;
 
   constructor() {
     this.createDOM();
     this.attachEvents();
-    router.subscribe(({ query }) =>
-      this.syncWithUrl(query.get('game') ?? undefined)
-    );
+    // Auth dialog wins when both `auth` and `game` are in the URL
+    router.subscribe(({ query }) => {
+      const authMode = query.get('auth');
+      const gameSlug = query.get('game');
+      this.syncWithUrl(authMode ? undefined : (gameSlug ?? undefined));
+    });
   }
 
   private isOpen(): boolean {
@@ -53,15 +56,16 @@ class GameDetailsDialogClass {
     if (slug) {
       if (!this.isOpen() || slug !== this.currentGameSlug) {
         // A deep link has no dialog-less entry below it to go back to
-        this.canCloseWithBack = this.hasHandledInitialRoute;
+        this.canCloseWithBack = this.hasSeenUrlWithoutGame;
         this.setGameSlug(slug);
         this.open();
       }
-    } else if (this.isOpen()) {
-      this.close();
+    } else {
+      this.hasSeenUrlWithoutGame = true;
+      if (this.isOpen()) {
+        this.close();
+      }
     }
-
-    this.hasHandledInitialRoute = true;
   }
 
   private requestClose() {
