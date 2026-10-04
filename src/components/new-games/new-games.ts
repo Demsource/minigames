@@ -5,6 +5,7 @@ import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 import { apiCall, type Game, type ApiResponse } from '../../services/api';
 import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
 import { ErrorBanner } from '../error-banner/error-banner';
+import { EmptyState } from '../empty-state/empty-state';
 
 interface GameData {
   title: string;
@@ -452,6 +453,17 @@ export function NewGames(): HTMLElement {
       const games = apiGames.data.map((game) =>
         transformApiGameToCardData(game)
       );
+
+      if (games.length === 0) {
+        track.replaceChildren(
+          EmptyState({
+            title: 'No games available',
+            message: 'There are no featured games to display at the moment.',
+            isDismissible: true,
+          })
+        );
+        return;
+      }
 
       const cardsHtml = games
         .map((game, index) => createGameCard(game, index))
