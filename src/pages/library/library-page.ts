@@ -7,6 +7,7 @@ import { Pagination } from '../../components/pagination/pagination';
 import { Footer } from '../../components/footer/footer';
 import { apiCall, ApiResponse } from '../../services/api';
 import { ErrorBanner } from '../../components/error-banner/error-banner';
+import { EmptyState } from '../../components/empty-state/empty-state';
 import { createSkeletonGameCardsGroup } from '../../components/skeletons/skeleton-loader-game-cards';
 import '../../components/skeletons/skeleton-loader-game-cards.scss';
 import './library-page.scss';
@@ -54,6 +55,22 @@ export function Library(currentRoute: string): HTMLElement {
   const loadGames = async () => {
     try {
       const response = await apiCall<ApiResponse>('/api/games?limit=6');
+
+      if (response.data.length === 0) {
+        const skeleton = contentContainer.querySelector(
+          '.skeleton-game-cards-group'
+        );
+        if (skeleton) {
+          skeleton.replaceWith(
+            EmptyState({
+              title: 'No games available',
+              message: 'There are no games to display at the moment.',
+              isDismissible: true,
+            })
+          );
+        }
+        return;
+      }
 
       const gameCardsElement = GameCardsSection({
         games: response.data,
