@@ -1,6 +1,8 @@
 import './leaderboard.scss';
 import { apiCall } from '../../services/api';
 import { ErrorBanner } from '../error-banner/error-banner';
+import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
+import { EmptyState } from '../empty-state/empty-state';
 
 interface LeaderboardPlayer {
   rank: number;
@@ -104,17 +106,35 @@ export function Leaderboard(): HTMLElement {
   const tableContainer = section.querySelector(
     '.leaderboard-table-container'
   ) as HTMLElement;
+  const headerRow = section.querySelector('.lb-header') as HTMLElement;
+
+  const skeletonContainer = document.createElement('div');
+  skeletonContainer.className = 'leaderboard-content';
+  skeletonContainer.append(createSkeletonGroup(5));
+  tableContainer.append(skeletonContainer);
 
   const loadLeaderboard = async () => {
     try {
       const response = await apiCall<LeaderboardResponse>('/api/leaderboard');
-      const rowsHtml = createLeaderboardRows(response.data);
 
-      const headerRow = section.querySelector('.lb-header') as HTMLElement;
+      if (response.data.length === 0) {
+        skeletonContainer.replaceWith(
+          EmptyState({
+            title: 'No players available',
+            message: 'There are no players to display at the moment.',
+            isDismissible: true,
+          })
+        );
+        return;
+      }
+
+      const rowsHtml = createLeaderboardRows(response.data);
       headerRow.insertAdjacentHTML('afterend', rowsHtml);
+
+      skeletonContainer.remove();
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
-      tableContainer.replaceChildren(
+      skeletonContainer.replaceWith(
         ErrorBanner({
           message: 'Failed to load leaderboard. Please try again.',
           onRetry: loadLeaderboard,
