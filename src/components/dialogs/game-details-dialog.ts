@@ -13,6 +13,7 @@ import { apiCall, GameDetails, GameDetailsResponse } from '../../services/api';
 import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
 import { ErrorBanner } from '../../components/error-banner/error-banner';
+import { EmptyState } from '../../components/empty-state/empty-state';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -82,6 +83,28 @@ class GameDetailsDialogClass {
   private renderGameContent(gameData: GameDetails) {
     this.currentGameData = gameData;
     this.isLiked = gameData.isLikedByCurrentUser;
+
+    const isMissingData = !gameData || Object.keys(gameData).length === 0;
+
+    if (isMissingData) {
+      this.gameInfoContainer.replaceChildren(
+        EmptyState({
+          title: 'Game Data Unavailable',
+          message:
+            'This game information is currently unavailable. Please try again later.',
+          isDismissible: false,
+        })
+      );
+
+      this.topRecordsContainer.replaceChildren();
+
+      const commentsSection = this.dialog.querySelector(
+        '.comments-section'
+      ) as HTMLElement;
+      commentsSection.replaceChildren();
+
+      return;
+    }
 
     const dialogImage = this.dialog.querySelector(
       '.dialog-image'
