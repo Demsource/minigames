@@ -1,0 +1,99 @@
+@use '../../styles/tokens' as *;
+
+.empty-state {
+  width: 100%;
+  padding: $size-8;
+  text-align: center;
+  border: 2px dashed $outline;
+  border-radius: $corner-large;
+  background-color: $surface-low;
+  font-family: $font-inter;
+  position: relative;
+
+  .empty-state-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $size-4;
+  }
+
+  .empty-state-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: $corner-large;
+    background-color: $secondary;
+    color: $tertiary;
+
+    svg {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  .empty-state-text {
+    max-width: 400px;
+  }
+
+  .empty-state-title {
+    font-size: $headline-small;
+    font-weight: $bold;
+    color: $on-primary;
+    margin: 0 0 $size-1 0;
+  }
+
+  .empty-state-message {
+    font-size: $body-medium;
+    color: $on-bg;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .empty-state-close {
+    position: absolute;
+    top: $size-3;
+    right: $size-3;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: $on-bg-low;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $size-1;
+    transition: color 0.2s ease;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      color: $on-primary;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: $size-6;
+
+    .empty-state-icon {
+      width: 56px;
+      height: 56px;
+
+      svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+
+    .empty-state-title {
+      font-size: $headline-small;
+    }
+
+    .empty-state-message {
+      font-size: $body-small;
+    }
+  }
+}
