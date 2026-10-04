@@ -4,6 +4,7 @@ import heartIcon from '../../assets/icons/heart.svg';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 import { apiCall, type Game, type ApiResponse } from '../../services/api';
 import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
+import { ErrorBanner } from '../error-banner/error-banner';
 
 interface GameData {
   title: string;
@@ -339,7 +340,13 @@ export function NewGames(): HTMLElement {
       }
     } catch (error) {
       console.error('Failed to load featured games:', error);
-      track.innerHTML = '<p>Failed to load games. Please try again later.</p>';
+      track.replaceChildren(
+        ErrorBanner({
+          message: 'Failed to load featured games. Please try again.',
+          onRetry: loadGames,
+          isDismissible: true,
+        })
+      );
     }
   };
 
