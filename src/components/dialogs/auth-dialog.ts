@@ -4,14 +4,86 @@ import lockIcon from '../../assets/icons/lock.svg';
 import mailIcon from '../../assets/icons/mail.svg';
 import personIcon from '../../assets/icons/person.svg';
 import visibilityIcon from '../../assets/icons/visibility.svg';
+import { router } from '../../app/router';
+
+export type AuthMode = 'login' | 'register';
+
+const AUTH_MODES: Set<AuthMode> = new Set(['login', 'register']);
+
+function isAuthMode(value: string): value is AuthMode {
+  return AUTH_MODES.has(value as AuthMode);
+}
+
+// Switching tabs replaces the entry so Back still closes the dialog
+function switchMode(mode: AuthMode) {
+  router.setQuery({ auth: mode }, { replace: true });
+}
 
 class AuthDialogClass {
   private backdrop!: HTMLElement;
   private dialog!: HTMLElement;
+  // True when the history entry below is the page without the dialog
+  private canCloseWithBack: boolean = false;
+  private hasSeenUrlWithoutAuth: boolean = false;
 
   constructor() {
     this.createDOM();
     this.attachEvents();
+    router.subscribe(({ query }) =>
+      this.syncWithUrl(query.get('auth') ?? undefined)
+    );
+  }
+
+  private isOpen(): boolean {
+    return this.backdrop.classList.contains('is-open');
+  }
+
+  // The `auth` query param is the source of truth for the dialog
+  private syncWithUrl(mode: string | undefined) {
+    if (mode === undefined) {
+      this.hasSeenUrlWithoutAuth = true;
+      if (this.isOpen()) {
+        this.close();
+      }
+      return;
+    }
+
+    if (!isAuthMode(mode)) {
+      router.setQuery({ auth: undefined }, { replace: true });
+      return;
+    }
+
+    this.applyMode(mode);
+    if (this.isOpen()) {
+      return;
+    }
+
+    // A deep link has no dialog-less entry below it to go back to
+    this.canCloseWithBack = this.hasSeenUrlWithoutAuth;
+    this.open();
+  }
+
+  private applyMode(mode: AuthMode) {
+    const isRegister = mode === 'register';
+    this.dialog.classList.toggle('view-register', isRegister);
+    this.dialog
+      .querySelector('#toggle-login')
+      ?.classList.toggle('active', !isRegister);
+    this.dialog
+      .querySelector('#toggle-register')
+      ?.classList.toggle('active', isRegister);
+  }
+
+  private requestClose() {
+    if (!this.isOpen()) {
+      return;
+    }
+
+    if (this.canCloseWithBack) {
+      globalThis.history.back();
+    } else {
+      router.setQuery({ auth: undefined }, { replace: true });
+    }
   }
 
   private createDOM() {
@@ -119,7 +191,7 @@ class AuthDialogClass {
   private attachEvents() {
     this.backdrop.addEventListener('click', (event) => {
       if (event.target === this.backdrop) {
-        this.close();
+        this.requestClose();
       }
     });
 
@@ -128,32 +200,24 @@ class AuthDialogClass {
     const switchLoginLink = this.dialog.querySelector('#switch-to-login');
     const switchRegisterLink = this.dialog.querySelector('#switch-to-register');
 
-    const showLogin = () => {
-      this.dialog.classList.remove('view-register');
-      toggleLoginButton?.classList.add('active');
-      toggleRegisterButton?.classList.remove('active');
-    };
+    toggleLoginButton?.addEventListener('click', () => switchMode('login'));
+    switchLoginLink?.addEventListener('click', () => switchMode('login'));
 
-    const showRegister = () => {
-      this.dialog.classList.add('view-register');
-      toggleRegisterButton?.classList.add('active');
-      toggleLoginButton?.classList.remove('active');
-    };
-
-    toggleLoginButton?.addEventListener('click', showLogin);
-    switchLoginLink?.addEventListener('click', showLogin);
-
-    toggleRegisterButton?.addEventListener('click', showRegister);
-    switchRegisterLink?.addEventListener('click', showRegister);
+    toggleRegisterButton?.addEventListener('click', () =>
+      switchMode('register')
+    );
+    switchRegisterLink?.addEventListener('click', () => switchMode('register'));
 
     document.addEventListener('keydown', (event) => {
-      if (
-        event.key === 'Escape' &&
-        this.backdrop.classList.contains('is-open')
-      ) {
-        this.close();
+      if (event.key === 'Escape' && this.isOpen()) {
+        this.requestClose();
       }
     });
+  }
+
+  // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
+  public show(mode: AuthMode) {
+    router.setQuery({ auth: mode });
   }
 
   public open() {
