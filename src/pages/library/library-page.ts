@@ -2,6 +2,8 @@ import { Header } from '../../components/header/header';
 import '../../components/header/header.scss';
 import { PageTitle } from '../../components/page-title/page-title';
 import { FilterSortBar } from '../../components/sort-and-filter/filter-sort-bar';
+import { setActiveFilterChip } from '../../components/sort-and-filter/filter-chips';
+import { router } from '../../app/router';
 import { GameCardsSection } from '../../components/game-cards/game-cards-section';
 import { Pagination } from '../../components/pagination/pagination';
 import { Footer } from '../../components/footer/footer';
@@ -118,6 +120,31 @@ export function Library(currentRoute: string): HTMLElement {
     }
   };
 
+  let defaultCategorySlug = currentCategory;
+
+  // Resolves the URL category against loaded categories; unknown → default
+  const getCategoryFromUrl = (): string => {
+    const slug = router.getQuery().get('category');
+    return slug && categories.some((c) => c.slug === slug)
+      ? slug
+      : defaultCategorySlug;
+  };
+
+  router.subscribe(
+    ({ pathChanged }) => {
+      if (pathChanged || categories.length === 0) return;
+
+      const slug = getCategoryFromUrl();
+      if (slug === currentCategory) return;
+
+      currentCategory = slug;
+      currentPage = 1;
+      setActiveFilterChip(filterSortBarContainer, slug);
+      loadGames();
+    },
+    { pageScoped: true }
+  );
+
   const loadCategories = async () => {
     try {
       const response = await apiCall<CategoriesResponse>('/api/categories');
@@ -125,16 +152,26 @@ export function Library(currentRoute: string): HTMLElement {
 
       const defaultCategory = categories.find((c) => c.isDefault);
       if (defaultCategory) {
-        currentCategory = defaultCategory.slug;
+        defaultCategorySlug = defaultCategory.slug;
+      }
+
+      currentCategory = getCategoryFromUrl();
+
+      // Drop an invalid or redundant category from the URL
+      const urlCategory = router.getQuery().get('category');
+      if (urlCategory && urlCategory !== currentCategory) {
+        router.setQuery({ category: undefined }, { replace: true });
       }
 
       filterSortBarContainer.append(
         FilterSortBar({
           categories,
+          activeCategory: currentCategory,
           onFilterChange: (slug: string) => {
-            currentCategory = slug;
-            currentPage = 1;
-            loadGames();
+            router.setQuery({
+              category: slug === defaultCategorySlug ? undefined : slug,
+              page: undefined,
+            });
           },
           onSortChange: (sortId: string) => {
             currentSort = sortId;

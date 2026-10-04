@@ -5,19 +5,27 @@ import { Category } from '../../services/api';
 
 interface FilterSortBarProperties {
   categories: Category[];
+  activeCategory?: string;
   onFilterChange?: (slug: string) => void;
   onSortChange?: (sortId: string) => void;
 }
 
 export function FilterSortBar({
   categories,
+  activeCategory,
   onFilterChange,
   onSortChange,
 }: FilterSortBarProperties): HTMLElement {
   const container = document.createElement('div');
   container.className = 'filter-sort-bar';
 
-  container.append(FilterChips({ categories, onChipClick: onFilterChange }));
+  container.append(
+    FilterChips({
+      categories,
+      activeSlug: activeCategory,
+      onChipClick: onFilterChange,
+    })
+  );
   container.append(SortControl({ onSortChange }));
 
   return container;
