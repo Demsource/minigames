@@ -30,6 +30,7 @@ class GameDetailsDialogClass {
   private currentGameData: GameDetails | undefined;
   private currentCommentsData: Comment[] = [];
   private totalCommentsCount: number = 0;
+  private commentsLoadFailed: boolean = false;
 
   constructor() {
     this.createDOM();
@@ -192,6 +193,25 @@ class GameDetailsDialogClass {
     const commentsSection = this.dialog.querySelector(
       '.comments-section'
     ) as HTMLElement;
+
+    if (this.commentsLoadFailed) {
+      commentsSection.innerHTML = `
+        <div class="comments-header">
+          <h2 class="comments-title">Comments</h2>
+        </div>
+      `;
+      const errorBanner = ErrorBanner({
+        message: 'Failed to load comments. Please try again.',
+        onRetry: async () => {
+          await this.loadComments();
+          this.renderGameContent(this.currentGameData!);
+        },
+        isDismissible: true,
+      });
+      commentsSection.append(errorBanner);
+      return;
+    }
+
     commentsSection.innerHTML = `
       <div class="comments-header">
         <h2 class="comments-title">Comments (${this.totalCommentsCount})</h2>
@@ -561,10 +581,12 @@ class GameDetailsDialogClass {
       );
       this.currentCommentsData = response.data;
       this.totalCommentsCount = response.meta.totalComments;
+      this.commentsLoadFailed = false;
     } catch (error) {
       console.error('Failed to load comments:', error);
       this.currentCommentsData = [];
       this.totalCommentsCount = 0;
+      this.commentsLoadFailed = true;
     }
   }
 
@@ -609,6 +631,7 @@ class GameDetailsDialogClass {
       return;
     }
 
+    this.commentsLoadFailed = false;
     this.backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
     this.showSkeleton();
