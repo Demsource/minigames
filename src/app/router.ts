@@ -1,4 +1,6 @@
-type RouteHandler = (currentRoute: string) => HTMLElement;
+type RouteHandler = (
+  currentRoute: string
+) => HTMLElement | Promise<HTMLElement>;
 
 export class Router {
   private routes: Map<string, RouteHandler> = new Map();
@@ -44,7 +46,7 @@ export class Router {
     this.handleRoute();
   }
 
-  public handleRoute() {
+  public async handleRoute() {
     const pathname = globalThis.location.pathname;
     const relativePath = pathname.startsWith(this.base)
       ? pathname.slice(this.base.length) || '/'
@@ -54,7 +56,9 @@ export class Router {
 
     this.rootElement.replaceChildren();
     if (handler) {
-      this.rootElement.append(handler(relativePath));
+      const result = handler(relativePath);
+      const element = result instanceof Promise ? await result : result;
+      this.rootElement.append(element);
     } else {
       this.rootElement.innerHTML = `
   <div class="page-container not-found">

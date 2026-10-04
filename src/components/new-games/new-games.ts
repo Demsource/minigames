@@ -2,12 +2,7 @@ import './new-games.scss';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
-
-import imgBubbleShooter from '../../assets/images/new-games/Game Card - Bubble Shooter.png';
-import imgCandyCrush from '../../assets/images/new-games/Game Card - Candy Crush.png';
-import imgIslanders from '../../assets/images/new-games/Game Card - Islanders New Shores.png';
-import imgVacationCafe from '../../assets/images/new-games/Game Card - Vacation Cafe Simulator.png';
-import imgWinterBurrow from '../../assets/images/new-games/Game Card - Winter Burrow.png';
+import { apiCall, type Game, type ApiResponse } from '../../services/api';
 
 interface GameData {
   title: string;
@@ -16,33 +11,23 @@ interface GameData {
   likes: string;
 }
 
-const games: GameData[] = [
-  { title: 'Candy Crush', image: imgCandyCrush, rating: '4.6', likes: '89.0K' },
-  {
-    title: 'ISLANDERS: New Shores',
-    image: imgIslanders,
-    rating: '4.9',
-    likes: '54.2K',
-  },
-  {
-    title: 'Vacation Cafe Simulator',
-    image: imgVacationCafe,
-    rating: '4.8',
-    likes: '28.7K',
-  },
-  {
-    title: 'Winter Burrow',
-    image: imgWinterBurrow,
-    rating: '4.9',
-    likes: '32.4K',
-  },
-  {
-    title: 'Bubble Shooter',
-    image: imgBubbleShooter,
-    rating: '4.7',
-    likes: '12.1K',
-  },
-];
+function formatLikesCount(count: number): string {
+  if (count >= 1_000_000) {
+    return (count / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  return count >= 1000
+    ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+    : count.toString();
+}
+
+function transformApiGameToCardData(game: Game): GameData {
+  return {
+    title: game.name,
+    image: `${import.meta.env.BASE_URL}${game.cardImage}`,
+    rating: game.rating.toString(),
+    likes: formatLikesCount(game.likesCount),
+  };
+}
 
 function createGameCard(game: GameData, index: number): string {
   const wideClass = index === 2 ? ' game-card-wide' : '';
@@ -281,13 +266,9 @@ class CarouselSlider {
   }
 }
 
-export function NewGames(): HTMLElement {
+export async function NewGames(): Promise<HTMLElement> {
   const section = document.createElement('section');
   section.className = 'new-games-section';
-
-  const cardsHtml = games
-    .map((game, index) => createGameCard(game, index))
-    .join('');
 
   section.innerHTML = `
     <header class="section-header">
@@ -306,36 +287,50 @@ export function NewGames(): HTMLElement {
     </header>
     <div class="carousel-container">
       <div class="carousel-track">
-        ${cardsHtml}
       </div>
     </div>
   `;
 
-  const track = section.querySelector('.carousel-track') as HTMLElement;
-  const slider = new CarouselSlider(track);
+  try {
+    const apiGames = await apiCall<ApiResponse>('/api/games?featured=true');
+    const games = apiGames.data.map((game) => transformApiGameToCardData(game));
 
-  const buttonPrevious = section.querySelector(
-    '.btn-prev'
-  ) as HTMLButtonElement;
-  const buttonNext = section.querySelector('.btn-next') as HTMLButtonElement;
+    const cardsHtml = games
+      .map((game, index) => createGameCard(game, index))
+      .join('');
 
-  buttonPrevious.addEventListener('mousedown', () => slider.startHoldPrev());
-  buttonPrevious.addEventListener('mouseup', () => slider.stopHold());
-  buttonPrevious.addEventListener('mouseleave', () => slider.stopHold());
-  buttonPrevious.addEventListener('click', () => slider.prev());
+    const track = section.querySelector('.carousel-track') as HTMLElement;
+    track.innerHTML = cardsHtml;
 
-  buttonNext.addEventListener('mousedown', () => slider.startHoldNext());
-  buttonNext.addEventListener('mouseup', () => slider.stopHold());
-  buttonNext.addEventListener('mouseleave', () => slider.stopHold());
-  buttonNext.addEventListener('click', () => slider.next());
+    const slider = new CarouselSlider(track);
 
-  const gameCards = section.querySelectorAll('.game-card');
-  for (const card of gameCards) {
-    card.addEventListener('click', () => {
-      if (!slider.wasDragged()) {
-        GameDetailsDialog.open();
-      }
-    });
+    const buttonPrevious = section.querySelector(
+      '.btn-prev'
+    ) as HTMLButtonElement;
+    const buttonNext = section.querySelector('.btn-next') as HTMLButtonElement;
+
+    buttonPrevious.addEventListener('mousedown', () => slider.startHoldPrev());
+    buttonPrevious.addEventListener('mouseup', () => slider.stopHold());
+    buttonPrevious.addEventListener('mouseleave', () => slider.stopHold());
+    buttonPrevious.addEventListener('click', () => slider.prev());
+
+    buttonNext.addEventListener('mousedown', () => slider.startHoldNext());
+    buttonNext.addEventListener('mouseup', () => slider.stopHold());
+    buttonNext.addEventListener('mouseleave', () => slider.stopHold());
+    buttonNext.addEventListener('click', () => slider.next());
+
+    const gameCards = section.querySelectorAll('.game-card');
+    for (const card of gameCards) {
+      card.addEventListener('click', () => {
+        if (!slider.wasDragged()) {
+          GameDetailsDialog.open();
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to load featured games:', error);
+    const track = section.querySelector('.carousel-track') as HTMLElement;
+    track.innerHTML = '<p>Failed to load games. Please try again later.</p>';
   }
 
   return section;
