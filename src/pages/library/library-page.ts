@@ -17,6 +17,8 @@ import { createSkeletonGameCardsGroup } from '../../components/skeletons/skeleto
 import '../../components/skeletons/skeleton-loader-game-cards.scss';
 import './library-page.scss';
 
+const PAGE_SIZE = 6;
+
 export function Library(currentRoute: string): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';
@@ -24,6 +26,7 @@ export function Library(currentRoute: string): HTMLElement {
   let categories: Category[] = [];
   let currentCategory = 'all';
   let currentSort = 'rating-desc';
+  let currentPage = 1;
 
   container.append(Header(currentRoute));
   container.append(
@@ -42,54 +45,55 @@ export function Library(currentRoute: string): HTMLElement {
 
   const contentContainer = document.createElement('div');
   contentContainer.id = 'game-cards-content';
-  const skeletonGroup = createSkeletonGameCardsGroup(6);
-  contentContainer.append(skeletonGroup);
+  contentContainer.append(createSkeletonGameCardsGroup(PAGE_SIZE));
   section.append(contentContainer);
   container.append(section);
 
+  const pagination = Pagination({
+    onPageChange: (pageNumber: number) => {
+      currentPage = pageNumber;
+      loadGames();
+    },
+  });
   const paginationWrapper = document.createElement('div');
   paginationWrapper.className = 'pagination-wrapper';
-  paginationWrapper.append(
-    Pagination({
-      totalPages: 10,
-      onPageChange: () => {},
-    })
-  );
+  paginationWrapper.append(pagination.element);
   container.append(paginationWrapper);
 
   container.append(Footer());
 
-  const buildGamesUrl = (
-    category: string = currentCategory,
-    sort: string = currentSort
-  ): string => {
-    const parameters = new URLSearchParams();
-    if (category && category !== 'all') {
-      parameters.append('category', category);
-    }
-    parameters.append('sort', sort);
-    parameters.append('limit', '6');
+  const buildGamesUrl = (): string => {
+    const parameters = new URLSearchParams({
+      category: currentCategory,
+      sort: currentSort,
+      page: String(currentPage),
+      limit: String(PAGE_SIZE),
+    });
     return `/api/games?${parameters.toString()}`;
   };
 
-  const loadGames = async () => {
-    try {
-      const url = buildGamesUrl(currentCategory, currentSort);
-      const response = await apiCall<ApiResponse>(url);
+  let latestRequestId = 0;
 
-      if (response.data.length === 0) {
-        const skeleton = contentContainer.querySelector(
-          '.skeleton-game-cards-group'
+  const loadGames = async () => {
+    const requestId = ++latestRequestId;
+    contentContainer.replaceChildren(createSkeletonGameCardsGroup(PAGE_SIZE));
+
+    try {
+      const response = await apiCall<ApiResponse>(buildGamesUrl());
+      if (requestId !== latestRequestId) return;
+
+      const isEmpty = response.data.length === 0;
+      currentPage = isEmpty ? 1 : Number(response.meta.page);
+      pagination.update(currentPage, Number(response.meta.totalPages));
+
+      if (isEmpty) {
+        contentContainer.replaceChildren(
+          EmptyState({
+            title: 'Data Not Found',
+            message: 'There are no games to display for this selection.',
+            isDismissible: false,
+          })
         );
-        if (skeleton) {
-          skeleton.replaceWith(
-            EmptyState({
-              title: 'No games available',
-              message: 'There are no games to display at the moment.',
-              isDismissible: true,
-            })
-          );
-        }
         return;
       }
 
@@ -97,34 +101,20 @@ export function Library(currentRoute: string): HTMLElement {
         games: response.data,
         onDetailsClick: () => {},
       });
-
       const gridElement = gameCardsElement.querySelector('.game-cards-grid');
       if (gridElement) {
-        const skeleton = contentContainer.querySelector(
-          '.skeleton-game-cards-group'
-        );
-        const errorBanner = contentContainer.querySelector('.error-banner');
-        const emptyState = contentContainer.querySelector('.empty-state');
-
-        const existingContent = skeleton || errorBanner || emptyState;
-        if (existingContent) {
-          existingContent.replaceWith(gridElement);
-        }
+        contentContainer.replaceChildren(gridElement);
       }
     } catch (error) {
+      if (requestId !== latestRequestId) return;
       console.error('Failed to load games:', error);
-      const skeleton = contentContainer.querySelector(
-        '.skeleton-game-cards-group'
+      contentContainer.replaceChildren(
+        ErrorBanner({
+          message: 'Failed to load games. Please try again.',
+          onRetry: loadGames,
+          isDismissible: true,
+        })
       );
-      if (skeleton) {
-        skeleton.replaceWith(
-          ErrorBanner({
-            message: 'Failed to load games. Please try again.',
-            onRetry: loadGames,
-            isDismissible: true,
-          })
-        );
-      }
     }
   };
 
@@ -143,12 +133,12 @@ export function Library(currentRoute: string): HTMLElement {
           categories,
           onFilterChange: (slug: string) => {
             currentCategory = slug;
-            contentContainer.replaceChildren(createSkeletonGameCardsGroup(6));
+            currentPage = 1;
             loadGames();
           },
           onSortChange: (sortId: string) => {
             currentSort = sortId;
-            contentContainer.replaceChildren(createSkeletonGameCardsGroup(6));
+            currentPage = 1;
             loadGames();
           },
         })
