@@ -14,17 +14,58 @@ const SORT_OPTIONS: SortOption[] = [
   { id: 'name-desc', label: 'Name Z→A' },
 ];
 
+export const DEFAULT_SORT_ID = 'rating-desc';
+
+export function isValidSortId(sortId: string): boolean {
+  return SORT_OPTIONS.some((option) => option.id === sortId);
+}
+
+export function setActiveSortOption(root: HTMLElement, sortId: string) {
+  const selected = SORT_OPTIONS.find((option) => option.id === sortId);
+  if (!selected) {
+    return;
+  }
+
+  for (const option of root.querySelectorAll<HTMLElement>(
+    ':scope .sort-option'
+  )) {
+    const isActive = option.dataset.id === sortId;
+    option.classList.toggle('active', isActive);
+    option.setAttribute('aria-selected', String(isActive));
+
+    const checkmark = option.querySelector('.checkmark');
+    if (isActive && !checkmark) {
+      const newCheckmark = document.createElement('img');
+      newCheckmark.src = checkmarkIcon;
+      newCheckmark.alt = 'Selected';
+      newCheckmark.className = 'checkmark';
+      option.insertBefore(newCheckmark, option.firstChild);
+    } else if (!isActive) {
+      checkmark?.remove();
+    }
+  }
+
+  const sortText = root.querySelector<HTMLElement>(':scope .sort-text');
+  if (sortText) {
+    sortText.textContent = `Sort by: ${selected.label}`;
+  }
+}
+
 interface SortControlProperties {
+  activeSortId?: string;
   onSortChange?: (sortId: string) => void;
 }
 
 export function SortControl({
+  activeSortId = DEFAULT_SORT_ID,
   onSortChange,
 }: SortControlProperties): HTMLElement {
   const container = document.createElement('div');
   container.className = 'sort-control';
 
-  const defaultSort = SORT_OPTIONS[1]; // Rating ↓
+  const defaultSort =
+    SORT_OPTIONS.find((option) => option.id === activeSortId) ||
+    SORT_OPTIONS[1]; // Rating ↓
 
   container.innerHTML = `
     <button class="sort-button" aria-expanded="false" aria-haspopup="listbox">
@@ -81,30 +122,9 @@ export function SortControl({
 
   for (const option of options) {
     option.addEventListener('click', () => {
-      const previousActive = container.querySelector('.sort-option.active');
-      previousActive?.classList.remove('active');
-      previousActive?.setAttribute('aria-selected', 'false');
-
-      const previousCheckmark = previousActive?.querySelector('.checkmark');
-      if (previousCheckmark) {
-        previousCheckmark.remove();
-      }
-
-      option.classList.add('active');
-      option.setAttribute('aria-selected', 'true');
-
-      const sortText = container.querySelector('.sort-text') as HTMLElement;
-      const optionText = option.querySelector('span')?.textContent || '';
-      sortText.textContent = `Sort by: ${optionText}`;
-
-      const checkmark = document.createElement('img');
-      checkmark.src = checkmarkIcon;
-      checkmark.alt = 'Selected';
-      checkmark.className = 'checkmark';
-      option.insertBefore(checkmark, option.firstChild);
-
-      const sortId = (option as HTMLElement).dataset.id;
-      onSortChange?.(sortId || '');
+      const sortId = option.dataset.id || '';
+      setActiveSortOption(container, sortId);
+      onSortChange?.(sortId);
 
       closeDropdown();
     });

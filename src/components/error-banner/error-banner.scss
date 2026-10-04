@@ -1,0 +1,105 @@
+@use '../../styles/tokens' as *;
+
+.error-banner {
+  width: 100%;
+  padding: $size-4;
+  background-color: rgba(131, 38, 30, 0.1);
+  border: 2px solid $error;
+  border-radius: $corner-large;
+  font-family: $font-inter;
+
+  .error-banner-content {
+    display: flex;
+    align-items: flex-start;
+    gap: $size-3;
+  }
+
+  .error-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background-color: rgba(131, 38, 30, 0.2);
+    border-radius: $corner-medium;
+    color: $error;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .error-message {
+    flex: 1;
+    font-size: $body-medium;
+    font-weight: $medium;
+    color: $error;
+    padding-top: 2px;
+  }
+
+  .error-actions {
+    flex-shrink: 0;
+    display: flex;
+    gap: $size-2;
+    align-items: center;
+  }
+
+  button {
+    font-family: $font-inter;
+    font-size: $body-small;
+    font-weight: $medium;
+    padding: $size-1 $size-3;
+    border-radius: $corner-small;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+      opacity: 0.8;
+    }
+  }
+
+  .error-retry-btn {
+    background-color: $error;
+    color: $white;
+    padding: $size-2 $size-3;
+
+    &:not(:disabled):hover {
+      filter: brightness(0.85);
+    }
+  }
+
+  .error-close-btn {
+    background-color: transparent;
+    color: $error;
+    padding: $size-1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    padding: $size-3;
+
+    .error-banner-content {
+      flex-direction: column;
+    }
+
+    .error-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+}

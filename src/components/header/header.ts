@@ -41,11 +41,11 @@ export function Header(currentRoute: string): HTMLElement {
 
   loginButton?.addEventListener('click', (event) => {
     event.preventDefault();
-    AuthDialog.open();
+    AuthDialog.show('login');
   });
   signupButton?.addEventListener('click', (event) => {
     event.preventDefault();
-    AuthDialog.open();
+    AuthDialog.show('register');
   });
 
   const burgerMenu = new BurgerMenu(currentRoute);

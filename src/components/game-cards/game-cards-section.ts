@@ -1,13 +1,15 @@
 import './game-cards-section.scss';
 import { GameCard } from './game-card';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
-import gamesData from '../../data/all-games-seed.json';
+import { Game } from '../../services/api';
 
 interface GameCardsSectionProperties {
+  games: Game[];
   onDetailsClick?: (slug: string) => void;
 }
 
 export function GameCardsSection({
+  games,
   onDetailsClick,
 }: GameCardsSectionProperties): HTMLElement {
   const section = document.createElement('section');
@@ -16,7 +18,7 @@ export function GameCardsSection({
   const container = document.createElement('div');
   container.className = 'game-cards-grid';
 
-  for (const game of gamesData.data.slice(0, 6)) {
+  for (const game of games) {
     const card = GameCard(game);
     const detailsButton = card.querySelector(
       '.btn-details'
@@ -24,7 +26,7 @@ export function GameCardsSection({
 
     if (detailsButton) {
       detailsButton.addEventListener('click', () => {
-        GameDetailsDialog.open();
+        GameDetailsDialog.show(game.slug);
         onDetailsClick?.(game.slug);
       });
     }

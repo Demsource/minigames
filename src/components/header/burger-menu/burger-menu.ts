@@ -57,12 +57,12 @@ export class BurgerMenu {
     loginButton?.addEventListener('click', (event) => {
       event.preventDefault();
       this.close();
-      AuthDialog.open();
+      AuthDialog.show('login');
     });
     signupButton?.addEventListener('click', (event) => {
       event.preventDefault();
       this.close();
-      AuthDialog.open();
+      AuthDialog.show('register');
     });
 
     // Close when clicking a nav link

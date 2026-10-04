@@ -1,112 +1,101 @@
 import './pagination.scss';
 
 interface PaginationProperties {
-  totalPages: number;
   onPageChange?: (pageNumber: number) => void;
+}
+
+export interface PaginationController {
+  element: HTMLElement;
+  update: (currentPage: number, totalPages: number) => void;
 }
 
 function getMaxVisiblePages(): number {
   return window.innerWidth < 768 ? 3 : 4;
 }
 
-function renderPageButtons(currentPage: number, totalPages: number): string {
-  const maxVisiblePages = getMaxVisiblePages();
-  const buttons: string[] = [];
+function getVisibleRange(
+  currentPage: number,
+  totalPages: number
+): [number, number] {
+  const maxVisiblePages = Math.min(getMaxVisiblePages(), totalPages);
+  const centeredStart = currentPage - Math.floor(maxVisiblePages / 2);
+  const startPage = Math.max(
+    1,
+    Math.min(centeredStart, totalPages - maxVisiblePages + 1)
+  );
+  return [startPage, startPage + maxVisiblePages - 1];
+}
 
-  const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-  const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-  for (let index = startPage; index <= endPage; index++) {
-    buttons.push(`
-      <button class="page-btn${index === currentPage ? ' active' : ''}" data-page="${index}">
-        ${index}
-      </button>
-    `);
-  }
-
-  return buttons.join('');
+function createButton(
+  className: string,
+  label: string,
+  onClick: () => void
+): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
 }
 
 export function Pagination({
-  totalPages,
   onPageChange,
-}: PaginationProperties): HTMLElement {
+}: PaginationProperties = {}): PaginationController {
   const container = document.createElement('div');
   container.className = 'pagination';
 
   let currentPage = 1;
+  let totalPages = 1;
 
-  const updatePagination = () => {
-    const pageButtons =
-      container.querySelectorAll<HTMLButtonElement>('.page-btn');
-    const previousArrow =
-      container.querySelector<HTMLButtonElement>('.arrow-btn.prev');
-    const nextArrow =
-      container.querySelector<HTMLButtonElement>('.arrow-btn.next');
+  const goToPage = (pageNumber: number) => {
+    if (pageNumber === currentPage || pageNumber < 1 || pageNumber > totalPages)
+      return;
+    currentPage = pageNumber;
+    render();
+    onPageChange?.(currentPage);
+  };
 
-    if (!previousArrow || !nextArrow) return;
+  const render = () => {
+    const isFirst = currentPage <= 1;
+    const isLast = currentPage >= totalPages;
 
-    for (const button of pageButtons) {
-      const pageNumber = Number(button.dataset.page);
-      button.classList.toggle('active', pageNumber === currentPage);
+    const previousArrow = createButton('arrow-btn prev', '<', () =>
+      goToPage(currentPage - 1)
+    );
+    previousArrow.setAttribute('aria-label', 'Previous page');
+    previousArrow.disabled = isFirst;
+    previousArrow.classList.toggle('disabled', isFirst);
+
+    const nextArrow = createButton('arrow-btn next', '>', () =>
+      goToPage(currentPage + 1)
+    );
+    nextArrow.setAttribute('aria-label', 'Next page');
+    nextArrow.disabled = isLast;
+    nextArrow.classList.toggle('disabled', isLast);
+
+    const [startPage, endPage] = getVisibleRange(currentPage, totalPages);
+    const pageButtons: HTMLButtonElement[] = [];
+    for (let page = startPage; page <= endPage; page++) {
+      const button = createButton('page-btn', String(page), () =>
+        goToPage(page)
+      );
+      button.classList.toggle('active', page === currentPage);
+      if (page === currentPage) button.setAttribute('aria-current', 'page');
+      pageButtons.push(button);
     }
 
-    previousArrow.disabled = currentPage === 1;
-    nextArrow.disabled = currentPage === totalPages;
-    previousArrow.classList.toggle('disabled', currentPage === 1);
-    nextArrow.classList.toggle('disabled', currentPage === totalPages);
+    container.replaceChildren(previousArrow, ...pageButtons, nextArrow);
   };
 
-  const renderPagination = () => {
-    container.innerHTML = `
-      <button class="arrow-btn prev" aria-label="Previous page">
-        <span>&lt;</span>
-      </button>
-      ${renderPageButtons(currentPage, totalPages)}
-      <button class="arrow-btn next" aria-label="Next page">
-        <span>&gt;</span>
-      </button>
-    `;
-    attachEventListeners();
-    updatePagination();
+  const update = (page: number, pages: number) => {
+    totalPages = Math.max(1, pages || 1);
+    currentPage = Math.min(Math.max(1, page || 1), totalPages);
+    render();
   };
 
-  const attachEventListeners = () => {
-    const previousArrow =
-      container.querySelector<HTMLButtonElement>('.arrow-btn.prev');
-    const nextArrow =
-      container.querySelector<HTMLButtonElement>('.arrow-btn.next');
-    const pageButtons =
-      container.querySelectorAll<HTMLButtonElement>('.page-btn');
+  render();
+  window.addEventListener('resize', render);
 
-    previousArrow?.addEventListener('click', () => {
-      if (currentPage <= 1) return;
-      currentPage--;
-      renderPagination();
-      onPageChange?.(currentPage);
-    });
-
-    nextArrow?.addEventListener('click', () => {
-      if (currentPage >= totalPages) return;
-      currentPage++;
-      renderPagination();
-      onPageChange?.(currentPage);
-    });
-
-    for (const button of pageButtons) {
-      button.addEventListener('click', () => {
-        currentPage = Number(button.dataset.page);
-        renderPagination();
-        onPageChange?.(currentPage);
-      });
-    }
-  };
-
-  renderPagination();
-
-  window.addEventListener('resize', () => {
-    renderPagination();
-  });
-
-  return container;
+  return { element: container, update };
 }

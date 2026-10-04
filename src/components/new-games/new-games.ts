@@ -1,53 +1,44 @@
 import './new-games.scss';
+import '../skeletons/skeleton-loader-slider.scss';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
-
-import imgBubbleShooter from '../../assets/images/new-games/Game Card - Bubble Shooter.png';
-import imgCandyCrush from '../../assets/images/new-games/Game Card - Candy Crush.png';
-import imgIslanders from '../../assets/images/new-games/Game Card - Islanders New Shores.png';
-import imgVacationCafe from '../../assets/images/new-games/Game Card - Vacation Cafe Simulator.png';
-import imgWinterBurrow from '../../assets/images/new-games/Game Card - Winter Burrow.png';
+import { apiCall, type Game, type ApiResponse } from '../../services/api';
+import { createSkeletonSliderGroup } from '../skeletons/skeleton-loader-slider';
+import { ErrorBanner } from '../error-banner/error-banner';
+import { EmptyState } from '../empty-state/empty-state';
 
 interface GameData {
+  slug: string;
   title: string;
   image: string;
   rating: string;
   likes: string;
 }
 
-const games: GameData[] = [
-  { title: 'Candy Crush', image: imgCandyCrush, rating: '4.6', likes: '89.0K' },
-  {
-    title: 'ISLANDERS: New Shores',
-    image: imgIslanders,
-    rating: '4.9',
-    likes: '54.2K',
-  },
-  {
-    title: 'Vacation Cafe Simulator',
-    image: imgVacationCafe,
-    rating: '4.8',
-    likes: '28.7K',
-  },
-  {
-    title: 'Winter Burrow',
-    image: imgWinterBurrow,
-    rating: '4.9',
-    likes: '32.4K',
-  },
-  {
-    title: 'Bubble Shooter',
-    image: imgBubbleShooter,
-    rating: '4.7',
-    likes: '12.1K',
-  },
-];
+function formatLikesCount(count: number): string {
+  if (count >= 1_000_000) {
+    return (count / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  }
+  return count >= 1000
+    ? (count / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+    : count.toString();
+}
+
+function transformApiGameToCardData(game: Game): GameData {
+  return {
+    slug: game.slug,
+    title: game.name,
+    image: `${import.meta.env.BASE_URL}${game.cardImage}`,
+    rating: game.rating.toString(),
+    likes: formatLikesCount(game.likesCount),
+  };
+}
 
 function createGameCard(game: GameData, index: number): string {
   const wideClass = index === 2 ? ' game-card-wide' : '';
   return `
-    <div class="game-card${wideClass}">
+    <div class="game-card${wideClass}" data-game-slug="${game.slug}">
       <img src="${game.image}" alt="${game.title}" class="game-image" />
       <div class="game-info-overlay">
         <h3 class="game-title" title="${game.title}">${game.title}</h3>
@@ -76,7 +67,67 @@ class CarouselSlider {
   private dragStartX = 0;
   private dragOffset = 0;
   private holdInterval: ReturnType<typeof setInterval> | undefined;
+  private holdStartTime = 0;
+  private holdThreshold = 250;
   private autoAdvanceInterval: ReturnType<typeof setInterval> | undefined;
+  private resizeObserver: ResizeObserver | undefined;
+  private autoAdvanceAnimationFrameId: number | undefined;
+  private autoAdvanceStartTime = 0;
+  private autoAdvanceDuration = 0;
+  private buttonAnimationFrameId: number | undefined;
+  private buttonAnimationStartTime = 0;
+  private buttonAnimationDuration = 0;
+  private buttonAnimationStartIndex = 0;
+  private buttonAnimationTargetIndex = 0;
+
+  private autoAdvanceFrame = () => {
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+
+    const now = performance.now();
+    const elapsed = now - this.autoAdvanceStartTime;
+    const progress = elapsed / this.autoAdvanceDuration;
+
+    if (progress >= 1) {
+      this.currentIndex = 0;
+      this.track.style.transition = 'transform 0.1s ease';
+      this.updatePosition();
+      this.startAutoAdvance();
+      return;
+    }
+
+    this.track.style.transition = 'none';
+    const cardStep = this.cardWidth + this.gap;
+    const targetIndex = (maxOffset / cardStep) * progress;
+    this.currentIndex = targetIndex;
+    this.updatePosition();
+
+    this.autoAdvanceAnimationFrameId = requestAnimationFrame(
+      this.autoAdvanceFrame
+    );
+  };
+
+  private buttonAnimationFrame = () => {
+    const now = performance.now();
+    const elapsed = now - this.buttonAnimationStartTime;
+    const progress = Math.min(elapsed / this.buttonAnimationDuration, 1);
+
+    const currentIndex =
+      this.buttonAnimationStartIndex +
+      (this.buttonAnimationTargetIndex - this.buttonAnimationStartIndex) *
+        progress;
+    this.currentIndex = currentIndex;
+    this.updatePosition();
+
+    if (progress < 1) {
+      this.buttonAnimationFrameId = requestAnimationFrame(
+        this.buttonAnimationFrame
+      );
+    } else {
+      this.handleButtonAnimationEnd();
+    }
+  };
 
   constructor(track: HTMLElement) {
     this.track = track;
@@ -84,32 +135,35 @@ class CarouselSlider {
     this.updateCardWidth();
     this.attachDragListeners();
     this.startAutoAdvance();
+    this.attachResizeObserver();
   }
 
-  private autoAdvance() {
+  private getIndexIncrement(): number {
+    const cardStep = this.cardWidth + this.gap;
+    return 100 / cardStep;
+  }
+
+  private startAutoAdvance() {
+    this.stopAutoAdvance();
     const containerWidth = this.container.clientWidth;
     const trackWidth = this.track.scrollWidth;
     const maxOffset = trackWidth - containerWidth;
     const cardStep = this.cardWidth + this.gap;
-    const pixelsPerStep = 100;
+    const maxIndex = maxOffset / cardStep;
 
-    // Convert 100px to index increment
-    const indexIncrement = pixelsPerStep / cardStep;
-    this.currentIndex += indexIncrement;
-
-    // Wrap when reaching the left edge (maxOffset)
-    if ((this.cardWidth + this.gap) * this.currentIndex >= maxOffset) {
-      this.currentIndex = 0;
-    }
-
-    this.updatePosition();
-  }
-
-  private startAutoAdvance() {
-    this.autoAdvanceInterval = setInterval(() => this.autoAdvance(), 4000);
+    this.autoAdvanceDuration = (maxIndex / this.getIndexIncrement()) * 4000;
+    this.autoAdvanceStartTime = performance.now();
+    this.autoAdvanceAnimationFrameId = requestAnimationFrame(
+      this.autoAdvanceFrame
+    );
   }
 
   private stopAutoAdvance() {
+    if (this.autoAdvanceAnimationFrameId) {
+      cancelAnimationFrame(this.autoAdvanceAnimationFrameId);
+      this.autoAdvanceAnimationFrameId = undefined;
+    }
+
     if (!this.autoAdvanceInterval) {
       return;
     }
@@ -118,12 +172,20 @@ class CarouselSlider {
     this.autoAdvanceInterval = undefined;
   }
 
+  private attachResizeObserver() {
+    this.resizeObserver = new ResizeObserver(() => {
+      this.updateCardWidth();
+    });
+    this.resizeObserver.observe(this.track);
+  }
+
   private updateCardWidth() {
     const card = this.track.querySelector('.game-card') as HTMLElement;
     if (!card) return;
     this.cardWidth = card.offsetWidth;
-    const styles = globalThis.getComputedStyle(this.container);
-    this.gap = Number(styles.gap || '4');
+    const styles = globalThis.getComputedStyle(this.track);
+    const gapString = styles.gap || '4px';
+    this.gap = Number(gapString.match(/[\d.]+/)?.[0] || '4');
   }
 
   private attachDragListeners() {
@@ -209,46 +271,107 @@ class CarouselSlider {
     this.track.style.transform = `translateX(-${offset}px)`;
   }
 
-  next() {
-    this.currentIndex += 3;
-    this.updatePosition();
+  private animateToIndex(targetIndex: number) {
+    this.stopButtonAnimation();
+    this.track.style.transition = 'none';
+    this.buttonAnimationStartIndex = this.currentIndex;
+    this.buttonAnimationTargetIndex = targetIndex;
+    this.buttonAnimationDuration = 300;
+    this.buttonAnimationStartTime = performance.now();
+    this.buttonAnimationFrameId = requestAnimationFrame(
+      this.buttonAnimationFrame
+    );
+  }
 
-    // Check if track's right edge reached container's right edge
-    const containerWidth = this.container.clientWidth;
-    const trackWidth = this.track.scrollWidth;
-    const maxOffset = trackWidth - containerWidth;
-    const currentOffset = (this.cardWidth + this.gap) * this.currentIndex;
+  private handleButtonAnimationEnd() {
+    this.buttonAnimationFrameId = undefined;
+    this.track.style.transition = 'transform 0.1s ease';
+  }
 
-    if (!(currentOffset >= maxOffset)) {
+  private stopButtonAnimation() {
+    if (!this.buttonAnimationFrameId) {
       return;
     }
 
-    this.track.style.transition = 'none';
-    this.currentIndex = 0;
+    cancelAnimationFrame(this.buttonAnimationFrameId);
+    this.buttonAnimationFrameId = undefined;
+  }
+
+  private moveNextStep() {
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const cardStep = this.cardWidth + this.gap;
+    const maxIndex = maxOffset / cardStep;
+
+    this.currentIndex += this.getIndexIncrement();
+
+    if (this.currentIndex >= maxIndex) {
+      this.currentIndex = 0;
+    }
+
     this.updatePosition();
-    setTimeout(() => {
-      this.track.style.transition = 'transform 0.1s ease';
-    }, 10);
+  }
+
+  private movePrevStep() {
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const cardStep = this.cardWidth + this.gap;
+    const maxIndex = maxOffset / cardStep;
+
+    this.currentIndex -= this.getIndexIncrement();
+
+    if (this.currentIndex < 0) {
+      this.currentIndex = maxIndex;
+    }
+
+    this.updatePosition();
+  }
+
+  next() {
+    const targetIndex = this.currentIndex + this.getIndexIncrement();
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const cardStep = this.cardWidth + this.gap;
+    const maxIndex = maxOffset / cardStep;
+
+    if (targetIndex >= maxIndex) {
+      this.animateToIndex(maxIndex);
+      setTimeout(() => {
+        this.track.style.transition = 'none';
+        this.currentIndex = 0;
+        this.updatePosition();
+        setTimeout(() => {
+          this.track.style.transition = 'transform 0.1s ease';
+        }, 10);
+      }, 300);
+    } else {
+      this.animateToIndex(targetIndex);
+    }
   }
 
   prev() {
-    this.currentIndex -= 3;
+    const targetIndex = this.currentIndex - this.getIndexIncrement();
+    const containerWidth = this.container.clientWidth;
+    const trackWidth = this.track.scrollWidth;
+    const maxOffset = trackWidth - containerWidth;
+    const cardStep = this.cardWidth + this.gap;
+    const maxIndex = maxOffset / cardStep;
 
-    // Check if we've gone before the beginning
-    if (this.currentIndex < 0) {
-      this.track.style.transition = 'none';
-      // Calculate max index to show rightmost content
-      const containerWidth = this.container.clientWidth;
-      const trackWidth = this.track.scrollWidth;
-      const maxOffset = trackWidth - containerWidth;
-      const cardStep = this.cardWidth + this.gap;
-      this.currentIndex = Math.floor(maxOffset / cardStep);
-      this.updatePosition();
+    if (targetIndex < 0) {
+      this.animateToIndex(0);
       setTimeout(() => {
-        this.track.style.transition = 'transform 0.1s ease';
-      }, 10);
+        this.track.style.transition = 'none';
+        this.currentIndex = maxIndex;
+        this.updatePosition();
+        setTimeout(() => {
+          this.track.style.transition = 'transform 0.1s ease';
+        }, 10);
+      }, 300);
     } else {
-      this.updatePosition();
+      this.animateToIndex(targetIndex);
     }
   }
 
@@ -257,26 +380,37 @@ class CarouselSlider {
   }
 
   startHoldNext() {
-    if (this.holdInterval) return;
     this.stopAutoAdvance();
-    this.next();
-    this.holdInterval = setInterval(() => this.next(), 250);
+    this.stopButtonAnimation();
+    this.track.style.transition = 'none';
+    this.holdStartTime = performance.now();
+    this.moveNextStep();
+    this.holdInterval = setInterval(() => this.moveNextStep(), 200);
   }
 
   startHoldPrev() {
-    if (this.holdInterval) return;
     this.stopAutoAdvance();
-    this.prev();
-    this.holdInterval = setInterval(() => this.prev(), 250);
+    this.stopButtonAnimation();
+    this.track.style.transition = 'none';
+    this.holdStartTime = performance.now();
+    this.movePrevStep();
+    this.holdInterval = setInterval(() => this.movePrevStep(), 200);
   }
 
   stopHold() {
-    if (!this.holdInterval) {
-      return;
+    const holdDuration = performance.now() - this.holdStartTime;
+    const isQuickClick = holdDuration < this.holdThreshold;
+
+    if (this.holdInterval) {
+      clearInterval(this.holdInterval);
+      this.holdInterval = undefined;
+
+      if (isQuickClick) {
+        this.track.style.transition = 'transform 0.1s ease';
+      }
     }
 
-    clearInterval(this.holdInterval);
-    this.holdInterval = undefined;
+    this.track.style.transition = 'transform 0.1s ease';
     this.startAutoAdvance();
   }
 }
@@ -284,10 +418,6 @@ class CarouselSlider {
 export function NewGames(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'new-games-section';
-
-  const cardsHtml = games
-    .map((game, index) => createGameCard(game, index))
-    .join('');
 
   section.innerHTML = `
     <header class="section-header">
@@ -306,37 +436,85 @@ export function NewGames(): HTMLElement {
     </header>
     <div class="carousel-container">
       <div class="carousel-track">
-        ${cardsHtml}
       </div>
     </div>
   `;
 
   const track = section.querySelector('.carousel-track') as HTMLElement;
-  const slider = new CarouselSlider(track);
+  track.append(createSkeletonSliderGroup(5, 2));
 
   const buttonPrevious = section.querySelector(
     '.btn-prev'
   ) as HTMLButtonElement;
   const buttonNext = section.querySelector('.btn-next') as HTMLButtonElement;
 
-  buttonPrevious.addEventListener('mousedown', () => slider.startHoldPrev());
-  buttonPrevious.addEventListener('mouseup', () => slider.stopHold());
-  buttonPrevious.addEventListener('mouseleave', () => slider.stopHold());
-  buttonPrevious.addEventListener('click', () => slider.prev());
+  let slider: CarouselSlider | undefined;
 
-  buttonNext.addEventListener('mousedown', () => slider.startHoldNext());
-  buttonNext.addEventListener('mouseup', () => slider.stopHold());
-  buttonNext.addEventListener('mouseleave', () => slider.stopHold());
-  buttonNext.addEventListener('click', () => slider.next());
+  const loadGames = async () => {
+    try {
+      const apiGames = await apiCall<ApiResponse>('/api/games?featured=true');
+      const games = apiGames.data.map((game) =>
+        transformApiGameToCardData(game)
+      );
 
-  const gameCards = section.querySelectorAll('.game-card');
-  for (const card of gameCards) {
-    card.addEventListener('click', () => {
-      if (!slider.wasDragged()) {
-        GameDetailsDialog.open();
+      if (games.length === 0) {
+        track.replaceChildren(
+          EmptyState({
+            title: 'No games available',
+            message: 'There are no featured games to display at the moment.',
+            isDismissible: true,
+          })
+        );
+        return;
       }
-    });
-  }
+
+      const cardsHtml = games
+        .map((game, index) => createGameCard(game, index))
+        .join('');
+
+      track.innerHTML = cardsHtml;
+
+      slider = new CarouselSlider(track);
+
+      buttonPrevious.addEventListener('mousedown', () =>
+        slider?.startHoldPrev()
+      );
+      buttonPrevious.addEventListener('mouseup', () => slider?.stopHold());
+      buttonPrevious.addEventListener('mouseleave', () => slider?.stopHold());
+
+      buttonNext.addEventListener('mousedown', () => slider?.startHoldNext());
+      buttonNext.addEventListener('mouseup', () => slider?.stopHold());
+      buttonNext.addEventListener('mouseleave', () => slider?.stopHold());
+
+      const gameCards = section.querySelectorAll('.game-card');
+      for (const card of gameCards) {
+        const cardElement = card as HTMLElement;
+        cardElement.addEventListener('click', () => {
+          if (!slider || slider.wasDragged()) {
+            return;
+          }
+
+          const gameSlug = cardElement.dataset.gameSlug;
+          if (!gameSlug) {
+            return;
+          }
+
+          GameDetailsDialog.show(gameSlug);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load featured games:', error);
+      track.replaceChildren(
+        ErrorBanner({
+          message: 'Failed to load featured games. Please try again.',
+          onRetry: loadGames,
+          isDismissible: true,
+        })
+      );
+    }
+  };
+
+  loadGames();
 
   return section;
 }

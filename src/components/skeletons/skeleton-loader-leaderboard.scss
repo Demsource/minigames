@@ -1,0 +1,138 @@
+@use '../../styles/tokens' as *;
+
+@keyframes shimmer {
+  0% {
+    background-position: -1200px 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
+}
+
+.skeleton-leaderboard-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0;
+}
+
+.skeleton-leaderboard-row {
+  display: grid;
+  grid-template-columns: 80px 2.5fr 1fr 1fr 1fr 1.5fr;
+  align-items: center;
+  padding: $size-4 $size-6;
+  border-bottom: 1px solid $outline;
+  background-color: $surface;
+  gap: $size-3;
+
+  &:nth-child(even) {
+    background-color: $white;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    grid-template-columns: 60px 2fr 1fr 1fr 1fr;
+    padding: $size-4 $size-5;
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    grid-template-columns: 40px 1.5fr 1fr 1fr;
+    padding: $size-4 $size-3;
+  }
+}
+
+.skeleton-leaderboard-cell {
+  display: flex;
+  align-items: center;
+  gap: $size-2;
+
+  &.skeleton-leaderboard-rank {
+    height: 20px;
+    background: linear-gradient(
+      90deg,
+      $outline 0%,
+      $outline-variant 50%,
+      $outline 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-extra-small;
+  }
+
+  &.skeleton-leaderboard-player {
+    flex-direction: row;
+
+    .skeleton-leaderboard-avatar {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(
+        90deg,
+        $outline 0%,
+        $outline-variant 50%,
+        $outline 100%
+      );
+      background-size: 1200px 100%;
+      animation: shimmer 2s infinite;
+    }
+
+    .skeleton-leaderboard-text {
+      flex: 1;
+      height: 16px;
+      background: linear-gradient(
+        90deg,
+        $outline 0%,
+        $outline-variant 50%,
+        $outline 100%
+      );
+      background-size: 1200px 100%;
+      animation: shimmer 2s infinite;
+      border-radius: $corner-extra-small;
+    }
+  }
+
+  &.skeleton-leaderboard-games,
+  &.skeleton-leaderboard-score,
+  &.skeleton-leaderboard-streak {
+    height: 16px;
+    background: linear-gradient(
+      90deg,
+      $outline 0%,
+      $outline-variant 50%,
+      $outline 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-extra-small;
+  }
+
+  &.skeleton-leaderboard-favorite {
+    height: 24px;
+    width: 80px;
+    background: linear-gradient(
+      90deg,
+      $outline 0%,
+      $outline-variant 50%,
+      $outline 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-full;
+
+    @media (max-width: $breakpoint-tablet) {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .skeleton-leaderboard-cell {
+    &.skeleton-leaderboard-games {
+      display: none;
+    }
+  }
+}
