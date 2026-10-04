@@ -231,11 +231,18 @@ class GameDetailsDialogClass {
       </div>
 
       <div class="comments-list">
-        ${this.currentCommentsData
-          .map((comment) => {
-            const timeAgo = this.calculateTimeAgo(comment.createdAt);
-            const initial = comment.authorName.charAt(0).toUpperCase();
-            return `
+        ${
+          this.currentCommentsData.length === 0
+            ? EmptyState({
+                title: 'No comments yet',
+                message: 'Be the first to share your thoughts about this game!',
+                isDismissible: false,
+              }).outerHTML
+            : this.currentCommentsData
+                .map((comment) => {
+                  const timeAgo = this.calculateTimeAgo(comment.createdAt);
+                  const initial = comment.authorName.charAt(0).toUpperCase();
+                  return `
               <div class="comment-item">
                 <div class="comment-avatar">${initial}</div>
                 <div class="comment-content">
@@ -251,8 +258,9 @@ class GameDetailsDialogClass {
                 </div>
               </div>
             `;
-          })
-          .join('')}
+                })
+                .join('')
+        }
       </div>
     `;
   }
