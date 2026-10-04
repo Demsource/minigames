@@ -58,8 +58,7 @@ export function Library(currentRoute: string): HTMLElement {
 
   const pagination = Pagination({
     onPageChange: (pageNumber: number) => {
-      currentPage = pageNumber;
-      loadGames();
+      router.setQuery({ page: pageNumber === 1 ? undefined : pageNumber });
     },
   });
   const paginationWrapper = document.createElement('div');
@@ -90,8 +89,23 @@ export function Library(currentRoute: string): HTMLElement {
       if (requestId !== latestRequestId) return;
 
       const isEmpty = response.data.length === 0;
+
+      // Out-of-range page: fall back to page 1 (listener refetches)
+      if (isEmpty && currentPage > 1) {
+        router.setQuery({ page: undefined }, { replace: true });
+        return;
+      }
+
       currentPage = isEmpty ? 1 : Number(response.meta.page);
       pagination.update(currentPage, Number(response.meta.totalPages));
+
+      // Keep the URL in line with the page the API actually returned
+      if (currentPage !== getPageFromUrl()) {
+        router.setQuery(
+          { page: currentPage === 1 ? undefined : currentPage },
+          { replace: true }
+        );
+      }
 
       if (isEmpty) {
         contentContainer.replaceChildren(
@@ -141,17 +155,30 @@ export function Library(currentRoute: string): HTMLElement {
     return sortId && isValidSortId(sortId) ? sortId : DEFAULT_SORT_ID;
   };
 
+  // Positive integer, otherwise page 1
+  const getPageFromUrl = (): number => {
+    const page = Number(router.getQuery().get('page'));
+    return Number.isSafeInteger(page) && page > 0 ? page : 1;
+  };
+
   router.subscribe(
     ({ pathChanged }) => {
       if (pathChanged || categories.length === 0) return;
 
       const slug = getCategoryFromUrl();
       const sortId = getSortFromUrl();
-      if (slug === currentCategory && sortId === currentSort) return;
+      const page = getPageFromUrl();
+      if (
+        slug === currentCategory &&
+        sortId === currentSort &&
+        page === currentPage
+      ) {
+        return;
+      }
 
       currentCategory = slug;
       currentSort = sortId;
-      currentPage = 1;
+      currentPage = page;
       setActiveFilterChip(filterSortBarContainer, slug);
       setActiveSortOption(filterSortBarContainer, sortId);
       loadGames();
@@ -171,18 +198,22 @@ export function Library(currentRoute: string): HTMLElement {
 
       currentCategory = getCategoryFromUrl();
       currentSort = getSortFromUrl();
+      currentPage = getPageFromUrl();
 
-      // Drop invalid category / sort values from the URL
+      // Drop invalid category / sort / page values from the URL
       const urlQuery = router.getQuery();
       const urlCategory = urlQuery.get('category');
       const urlSort = urlQuery.get('sort');
+      const urlPage = urlQuery.get('page');
       const hasInvalidCategory = urlCategory && urlCategory !== currentCategory;
       const hasInvalidSort = urlSort && urlSort !== currentSort;
-      if (hasInvalidCategory || hasInvalidSort) {
+      const hasInvalidPage = urlPage && urlPage !== String(currentPage);
+      if (hasInvalidCategory || hasInvalidSort || hasInvalidPage) {
         router.setQuery(
           {
             category: hasInvalidCategory ? undefined : urlCategory || undefined,
             sort: hasInvalidSort ? undefined : urlSort || undefined,
+            page: hasInvalidPage ? undefined : urlPage || undefined,
           },
           { replace: true }
         );
