@@ -3,6 +3,7 @@ import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
 import { GameDetailsDialog } from '../dialogs/game-details-dialog';
 import { apiCall, type Game, type ApiResponse } from '../../services/api';
+import { createSkeletonGroup } from '../skeleton-loader/skeleton-loader';
 
 interface GameData {
   title: string;
@@ -266,7 +267,7 @@ class CarouselSlider {
   }
 }
 
-export async function NewGames(): Promise<HTMLElement> {
+export function NewGames(): HTMLElement {
   const section = document.createElement('section');
   section.className = 'new-games-section';
 
@@ -291,47 +292,58 @@ export async function NewGames(): Promise<HTMLElement> {
     </div>
   `;
 
-  try {
-    const apiGames = await apiCall<ApiResponse>('/api/games?featured=true');
-    const games = apiGames.data.map((game) => transformApiGameToCardData(game));
+  const track = section.querySelector('.carousel-track') as HTMLElement;
+  track.append(createSkeletonGroup(5, 2));
 
-    const cardsHtml = games
-      .map((game, index) => createGameCard(game, index))
-      .join('');
+  const buttonPrevious = section.querySelector(
+    '.btn-prev'
+  ) as HTMLButtonElement;
+  const buttonNext = section.querySelector('.btn-next') as HTMLButtonElement;
 
-    const track = section.querySelector('.carousel-track') as HTMLElement;
-    track.innerHTML = cardsHtml;
+  let slider: CarouselSlider | undefined;
 
-    const slider = new CarouselSlider(track);
+  const loadGames = async () => {
+    try {
+      const apiGames = await apiCall<ApiResponse>('/api/games?featured=true');
+      const games = apiGames.data.map((game) =>
+        transformApiGameToCardData(game)
+      );
 
-    const buttonPrevious = section.querySelector(
-      '.btn-prev'
-    ) as HTMLButtonElement;
-    const buttonNext = section.querySelector('.btn-next') as HTMLButtonElement;
+      const cardsHtml = games
+        .map((game, index) => createGameCard(game, index))
+        .join('');
 
-    buttonPrevious.addEventListener('mousedown', () => slider.startHoldPrev());
-    buttonPrevious.addEventListener('mouseup', () => slider.stopHold());
-    buttonPrevious.addEventListener('mouseleave', () => slider.stopHold());
-    buttonPrevious.addEventListener('click', () => slider.prev());
+      track.innerHTML = cardsHtml;
 
-    buttonNext.addEventListener('mousedown', () => slider.startHoldNext());
-    buttonNext.addEventListener('mouseup', () => slider.stopHold());
-    buttonNext.addEventListener('mouseleave', () => slider.stopHold());
-    buttonNext.addEventListener('click', () => slider.next());
+      slider = new CarouselSlider(track);
 
-    const gameCards = section.querySelectorAll('.game-card');
-    for (const card of gameCards) {
-      card.addEventListener('click', () => {
-        if (!slider.wasDragged()) {
-          GameDetailsDialog.open();
-        }
-      });
+      buttonPrevious.addEventListener('mousedown', () =>
+        slider?.startHoldPrev()
+      );
+      buttonPrevious.addEventListener('mouseup', () => slider?.stopHold());
+      buttonPrevious.addEventListener('mouseleave', () => slider?.stopHold());
+      buttonPrevious.addEventListener('click', () => slider?.prev());
+
+      buttonNext.addEventListener('mousedown', () => slider?.startHoldNext());
+      buttonNext.addEventListener('mouseup', () => slider?.stopHold());
+      buttonNext.addEventListener('mouseleave', () => slider?.stopHold());
+      buttonNext.addEventListener('click', () => slider?.next());
+
+      const gameCards = section.querySelectorAll('.game-card');
+      for (const card of gameCards) {
+        card.addEventListener('click', () => {
+          if (slider && !slider.wasDragged()) {
+            GameDetailsDialog.open();
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load featured games:', error);
+      track.innerHTML = '<p>Failed to load games. Please try again later.</p>';
     }
-  } catch (error) {
-    console.error('Failed to load featured games:', error);
-    const track = section.querySelector('.carousel-track') as HTMLElement;
-    track.innerHTML = '<p>Failed to load games. Please try again later.</p>';
-  }
+  };
+
+  loadGames();
 
   return section;
 }

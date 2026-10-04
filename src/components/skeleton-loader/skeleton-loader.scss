@@ -1,0 +1,116 @@
+@use '../../styles/tokens' as *;
+
+@keyframes shimmer {
+  0% {
+    background-position: -1200px 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
+}
+
+.skeleton-card {
+  position: relative;
+  border: 2px solid $outline;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background-color: $surface-low;
+
+  @media (max-width: $breakpoint-tablet) {
+    width: 200px !important;
+    height: 266px !important;
+
+    &.skeleton-card-wide {
+      width: 480px !important;
+    }
+  }
+
+  @media (max-width: $breakpoint-mobile) {
+    width: 140px !important;
+    height: 186px !important;
+
+    &.skeleton-card-wide {
+      width: 288px !important;
+    }
+  }
+
+  .skeleton-image {
+    width: 100%;
+    height: 70%;
+    background: linear-gradient(
+      90deg,
+      $surface-low 0%,
+      $outline 50%,
+      $surface-low 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-small;
+  }
+
+  .skeleton-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
+    padding: $size-3 $size-2;
+    background: linear-gradient(
+      to bottom,
+      rgba(245, 245, 240, 0.8),
+      rgba(249, 248, 243, 0.95)
+    );
+    display: flex;
+    flex-direction: column;
+    gap: $size-1;
+  }
+
+  .skeleton-title {
+    width: 85%;
+    height: 12px;
+    background: linear-gradient(
+      90deg,
+      $outline 0%,
+      $outline-variant 50%,
+      $outline 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-extra-small;
+  }
+
+  .skeleton-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: $size-1;
+  }
+
+  .skeleton-stat {
+    width: 60px;
+    height: 10px;
+    background: linear-gradient(
+      90deg,
+      $outline 0%,
+      $outline-variant 50%,
+      $outline 100%
+    );
+    background-size: 1200px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: $corner-extra-small;
+
+    &:last-child {
+      width: 50px;
+    }
+  }
+}
+
+.skeleton-group {
+  display: flex;
+  gap: $size-1;
+  width: 100%;
+  overflow: hidden;
+
+  .skeleton-card {
+    animation-delay: 0s;
+  }
+}

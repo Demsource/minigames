@@ -6,13 +6,13 @@ import { Leaderboard } from '../../components/leaderboard/leaderboard';
 import { DeveloperCta } from '../../components/developer-cta/developer-cta';
 import { Footer } from '../../components/footer/footer';
 import './home-page.scss';
-export async function Home(currentRoute: string): Promise<HTMLElement> {
+export function Home(currentRoute: string): HTMLElement {
   const container = document.createElement('div');
   container.className = 'page-container';
 
   container.append(Header(currentRoute));
   container.append(Hero());
-  container.append(await NewGames());
+  container.append(NewGames());
   container.append(Leaderboard());
   container.append(DeveloperCta());
   container.append(Footer());
