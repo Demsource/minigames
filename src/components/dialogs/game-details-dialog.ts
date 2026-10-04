@@ -1,4 +1,6 @@
 import './game-details-dialog.scss';
+import '../../components/skeletons/skeleton-loader-game-details-dialog.scss';
+import '../../components/skeletons/skeleton-loader-comments.scss';
 import closeButtonIcon from '../../assets/icons/close-button-wrapper.svg';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
@@ -8,6 +10,8 @@ import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-dis
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import commentsData from '../../data/comments-tukoni-forest-keepers.json';
 import { apiCall, GameDetails, GameDetailsResponse } from '../../services/api';
+import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
+import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -437,6 +441,37 @@ class GameDetailsDialogClass {
     }
   }
 
+  private showSkeleton() {
+    const dialogImage = this.dialog.querySelector(
+      '.dialog-image'
+    ) as HTMLElement;
+    const gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    const topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
+    ) as HTMLElement;
+
+    const skeletonElement = SkeletonGameDetailsDialog();
+    const skeletonCommentsElement = SkeletonCommentsSection();
+
+    const skeletonImage =
+      skeletonElement.querySelector('.skeleton-dialog-image')?.outerHTML || '';
+    const skeletonGameInfo =
+      skeletonElement.querySelector('.skeleton-game-info')?.getHTML() || '';
+    const skeletonTopRecords =
+      skeletonElement.querySelector('.skeleton-top-records')?.getHTML() || '';
+    const skeletonCommentsContent = skeletonCommentsElement.getHTML() || '';
+
+    dialogImage.innerHTML = skeletonImage;
+    gameInfoContainer.innerHTML = skeletonGameInfo;
+    topRecordsContainer.innerHTML = skeletonTopRecords;
+    commentsSection.innerHTML = skeletonCommentsContent;
+  }
+
   public setGameSlug(slug: string) {
     this.currentGameSlug = slug;
   }
@@ -447,6 +482,10 @@ class GameDetailsDialogClass {
       return;
     }
 
+    this.backdrop.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    this.showSkeleton();
+
     try {
       const response = await apiCall<GameDetailsResponse>(
         `/api/games/${this.currentGameSlug}`
@@ -455,8 +494,6 @@ class GameDetailsDialogClass {
       this.attachGameActionEvents();
       this.resetFavoriteState();
       this.resetCommentState();
-      this.backdrop.classList.add('is-open');
-      document.body.style.overflow = 'hidden';
     } catch (error) {
       console.error('Failed to load game details:', error);
     }
