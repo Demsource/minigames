@@ -26,6 +26,7 @@ export function GameCardsSection({
 
     if (detailsButton) {
       detailsButton.addEventListener('click', () => {
+        GameDetailsDialog.setGameSlug(game.slug);
         GameDetailsDialog.open();
         onDetailsClick?.(game.slug);
       });

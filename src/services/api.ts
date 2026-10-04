@@ -38,6 +38,36 @@ export interface CategoriesResponse {
   };
 }
 
+export interface GameSpecs {
+  genre: string;
+  players: string;
+  duration: string;
+  price: string;
+}
+
+export interface TopRecord {
+  position: number;
+  playerName: string;
+  score: number;
+  achievedAt: string;
+}
+
+export interface GameDetails {
+  slug: string;
+  name: string;
+  heroImage: string;
+  rating: number;
+  likesCount: number;
+  isLikedByCurrentUser: boolean;
+  fullDescription: string;
+  specs: GameSpecs;
+  topRecords: TopRecord[];
+}
+
+export interface GameDetailsResponse {
+  data: GameDetails;
+}
+
 export async function apiCall<T>(
   path: string,
   options?: RequestInit

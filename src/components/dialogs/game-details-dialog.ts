@@ -6,18 +6,25 @@ import heartBlackIcon from '../../assets/icons/heart-black.svg';
 import sendCommentIconDefault from '../../assets/icons/send-comment-trigger-default.svg';
 import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-disabled.svg';
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
-import gameData from '../../data/game-tukoni-forest-keepers.json';
 import commentsData from '../../data/comments-tukoni-forest-keepers.json';
+import { apiCall, GameDetails, GameDetailsResponse } from '../../services/api';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
   private dialog!: HTMLElement;
-  private isLiked: boolean;
+  private gameInfoContainer!: HTMLElement;
+  private topRecordsContainer!: HTMLElement;
+  private isLiked: boolean = false;
+  private currentGameSlug: string = '';
+  private currentGameData: GameDetails | undefined;
 
   constructor() {
-    this.isLiked = gameData.data.isLikedByCurrentUser;
     this.createDOM();
     this.attachEvents();
+  }
+
+  private getAssetPath(assetPath: string): string {
+    return assetPath.startsWith('/') ? `/minigames${assetPath}` : assetPath;
   }
 
   private createDOM() {
@@ -27,90 +34,19 @@ class GameDetailsDialogClass {
     this.dialog = document.createElement('div');
     this.dialog.className = 'game-details-dialog';
 
-    const formattedLikes = this.formatLikesCount(gameData.data.likesCount);
-
     this.dialog.innerHTML = `
       <div class="dialog-header">
         <button type="button" class="close-button" aria-label="Close dialog">
           <img src="${closeButtonIcon}" alt="Close" />
         </button>
       </div>
-      <div class="dialog-image">
-        <img src="${gameData.data.heroImage}" alt="${gameData.data.name}" />
-      </div>
-      <div class="game-info">
-        <div class="game-header">
-          <h1 class="game-title">${gameData.data.name}</h1>
-          <div class="game-meta">
-            <div class="rating">
-              <img src="${starIcon}" alt="" class="meta-icon" />
-              <span>${gameData.data.rating}</span>
-            </div>
-            <div class="likes">
-              <img src="${heartIcon}" alt="" class="meta-icon" />
-              <span>${formattedLikes}</span>
-            </div>
-          </div>
-        </div>
-
-        <p class="game-description">${gameData.data.fullDescription}</p>
-
-        <div class="game-specs">
-          <div class="spec-badge">
-            <div class="spec-label">Genre</div>
-            <div class="spec-value">${gameData.data.specs.genre}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Players</div>
-            <div class="spec-value">${gameData.data.specs.players}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Duration</div>
-            <div class="spec-value">${gameData.data.specs.duration}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Price</div>
-            <div class="spec-value">${gameData.data.specs.price}</div>
-          </div>
-        </div>
-
-        <div class="game-actions">
-          <button type="button" class="btn-play-now">Play Now</button>
-          <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
-            <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
-            <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="top-records-section">
-        <div class="top-records-header">
-          <h2 class="top-records-title">🏆 Top Records</h2>
-        </div>
-        <div class="top-records-list">
-          ${gameData.data.topRecords
-            .map((record) => {
-              const medalEmoji = this.getMedalEmoji(record.position);
-              const formattedScore = this.formatScore(record.score);
-              const daysAgo = this.calculateDaysAgo(record.achievedAt);
-              return `
-                <div class="top-record-item">
-                  <span class="medal">${medalEmoji}</span>
-                  <span class="player-name">${record.playerName}</span>
-                  <span class="record-score">${formattedScore}</span>
-                  <span class="record-date">${daysAgo}</span>
-                </div>
-              `;
-            })
-            .join('')}
-        </div>
-      </div>
-
+      <div class="dialog-image"></div>
+      <div class="game-info"></div>
+      <div class="top-records-section"></div>
       <div class="comments-section">
         <div class="comments-header">
-          <h2 class="comments-title">Comments (${commentsData.data.length})</h2>
+          <h2 class="comments-title">Comments</h2>
         </div>
-
         <div class="comment-form">
           <div class="comment-form-avatar">U</div>
           <textarea
@@ -123,36 +59,133 @@ class GameDetailsDialogClass {
             <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
           </button>
         </div>
-
-        <div class="comments-list">
-          ${commentsData.data
-            .map((comment) => {
-              const timeAgo = this.calculateTimeAgo(comment.createdAt);
-              const initial = comment.authorName.charAt(0).toUpperCase();
-              return `
-                <div class="comment-item">
-                  <div class="comment-avatar">${initial}</div>
-                  <div class="comment-content">
-                    <div class="comment-header">
-                      <span class="comment-author">${comment.authorName}</span>
-                      <span class="comment-time">${timeAgo}</span>
-                    </div>
-                    <p class="comment-text">${comment.text}</p>
-                    <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
-                      <img src="${heartBlackIcon}" alt="" class="like-icon" />
-                      <span class="like-count">${comment.likesCount}</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            })
-            .join('')}
-        </div>
+        <div class="comments-list"></div>
       </div>
     `;
 
+    this.gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    this.topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+
     this.backdrop.append(this.dialog);
     document.body.append(this.backdrop);
+  }
+
+  private renderGameContent(gameData: GameDetails) {
+    this.currentGameData = gameData;
+    this.isLiked = gameData.isLikedByCurrentUser;
+
+    const dialogImage = this.dialog.querySelector(
+      '.dialog-image'
+    ) as HTMLElement;
+    const imagePath = this.getAssetPath(gameData.heroImage);
+    dialogImage.innerHTML = `<img src="${imagePath}" alt="${gameData.name}" />`;
+
+    const formattedLikes = this.formatLikesCount(gameData.likesCount);
+
+    this.gameInfoContainer.innerHTML = `
+      <div class="game-header">
+        <h1 class="game-title">${gameData.name}</h1>
+        <div class="game-meta">
+          <div class="rating">
+            <img src="${starIcon}" alt="" class="meta-icon" />
+            <span>${gameData.rating}</span>
+          </div>
+          <div class="likes">
+            <img src="${heartIcon}" alt="" class="meta-icon" />
+            <span>${formattedLikes}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="game-description">${gameData.fullDescription}</p>
+
+      <div class="game-specs">
+        <div class="spec-badge">
+          <div class="spec-label">Genre</div>
+          <div class="spec-value">${gameData.specs.genre}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Players</div>
+          <div class="spec-value">${gameData.specs.players}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Duration</div>
+          <div class="spec-value">${gameData.specs.duration}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Price</div>
+          <div class="spec-value">${gameData.specs.price}</div>
+        </div>
+      </div>
+
+      <div class="game-actions">
+        <button type="button" class="btn-play-now">Play Now</button>
+        <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
+          <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
+          <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+        </button>
+      </div>
+    `;
+
+    this.topRecordsContainer.innerHTML = `
+      <div class="top-records-header">
+        <h2 class="top-records-title">🏆 Top Records</h2>
+      </div>
+      <div class="top-records-list">
+        ${gameData.topRecords
+          .map((record) => {
+            const medalEmoji = this.getMedalEmoji(record.position);
+            const formattedScore = this.formatScore(record.score);
+            const daysAgo = this.calculateDaysAgo(record.achievedAt);
+            return `
+              <div class="top-record-item">
+                <span class="medal">${medalEmoji}</span>
+                <span class="player-name">${record.playerName}</span>
+                <span class="record-score">${formattedScore}</span>
+                <span class="record-date">${daysAgo}</span>
+              </div>
+            `;
+          })
+          .join('')}
+      </div>
+    `;
+
+    const commentsTitle = this.dialog.querySelector(
+      '.comments-title'
+    ) as HTMLElement;
+    commentsTitle.textContent = `Comments (${commentsData.data.length})`;
+
+    const commentsList = this.dialog.querySelector(
+      '.comments-list'
+    ) as HTMLElement;
+    commentsList.innerHTML = `
+      ${commentsData.data
+        .map((comment) => {
+          const timeAgo = this.calculateTimeAgo(comment.createdAt);
+          const initial = comment.authorName.charAt(0).toUpperCase();
+          return `
+            <div class="comment-item">
+              <div class="comment-avatar">${initial}</div>
+              <div class="comment-content">
+                <div class="comment-header">
+                  <span class="comment-author">${comment.authorName}</span>
+                  <span class="comment-time">${timeAgo}</span>
+                </div>
+                <p class="comment-text">${comment.text}</p>
+                <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
+                  <img src="${heartBlackIcon}" alt="" class="like-icon" />
+                  <span class="like-count">${comment.likesCount}</span>
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join('')}
+    `;
   }
 
   private attachEvents() {
@@ -334,7 +367,11 @@ class GameDetailsDialogClass {
   }
 
   private resetFavoriteState() {
-    this.isLiked = gameData.data.isLikedByCurrentUser;
+    if (!this.currentGameData) {
+      return;
+    }
+
+    this.isLiked = this.currentGameData.isLikedByCurrentUser;
     const favoriteButton =
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
@@ -383,11 +420,46 @@ class GameDetailsDialogClass {
     }
   }
 
-  public open() {
-    this.resetFavoriteState();
-    this.resetCommentState();
-    this.backdrop.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
+  private attachGameActionEvents() {
+    const favoriteButton =
+      this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
+
+    favoriteButton?.addEventListener('click', () => {
+      this.toggleFavorite(favoriteButton);
+    });
+
+    const commentLikeButtons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+    for (const button of commentLikeButtons) {
+      button.addEventListener('click', () => {
+        this.toggleCommentLike(button);
+      });
+    }
+  }
+
+  public setGameSlug(slug: string) {
+    this.currentGameSlug = slug;
+  }
+
+  public async open() {
+    if (!this.currentGameSlug) {
+      console.error('Game slug not set');
+      return;
+    }
+
+    try {
+      const response = await apiCall<GameDetailsResponse>(
+        `/api/games/${this.currentGameSlug}`
+      );
+      this.renderGameContent(response.data);
+      this.attachGameActionEvents();
+      this.resetFavoriteState();
+      this.resetCommentState();
+      this.backdrop.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    } catch (error) {
+      console.error('Failed to load game details:', error);
+    }
   }
 
   public close() {
