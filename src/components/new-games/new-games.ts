@@ -9,6 +9,7 @@ import { ErrorBanner } from '../error-banner/error-banner';
 import { EmptyState } from '../empty-state/empty-state';
 
 interface GameData {
+  slug: string;
   title: string;
   image: string;
   rating: string;
@@ -26,6 +27,7 @@ function formatLikesCount(count: number): string {
 
 function transformApiGameToCardData(game: Game): GameData {
   return {
+    slug: game.slug,
     title: game.name,
     image: `${import.meta.env.BASE_URL}${game.cardImage}`,
     rating: game.rating.toString(),
@@ -36,7 +38,7 @@ function transformApiGameToCardData(game: Game): GameData {
 function createGameCard(game: GameData, index: number): string {
   const wideClass = index === 2 ? ' game-card-wide' : '';
   return `
-    <div class="game-card${wideClass}">
+    <div class="game-card${wideClass}" data-game-slug="${game.slug}">
       <img src="${game.image}" alt="${game.title}" class="game-image" />
       <div class="game-info-overlay">
         <h3 class="game-title" title="${game.title}">${game.title}</h3>
@@ -487,9 +489,17 @@ export function NewGames(): HTMLElement {
       const gameCards = section.querySelectorAll('.game-card');
       for (const card of gameCards) {
         card.addEventListener('click', () => {
-          if (slider && !slider.wasDragged()) {
-            GameDetailsDialog.open();
+          if (!slider || slider.wasDragged()) {
+            return;
           }
+
+          const gameSlug = card.dataset.gameSlug;
+          if (!gameSlug) {
+            return;
+          }
+
+          GameDetailsDialog.setGameSlug(gameSlug);
+          GameDetailsDialog.open();
         });
       }
     } catch (error) {

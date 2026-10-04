@@ -1,0 +1,165 @@
+@use '../../styles/tokens' as *;
+
+@keyframes shimmer {
+  0% {
+    background-position: -1200px 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
+}
+
+.skeleton-comments-section {
+  display: flex;
+  flex-direction: column;
+  gap: $size-2;
+}
+
+.skeleton-comments-header {
+  width: 120px;
+  height: 20px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+}
+
+.skeleton-comment-form {
+  display: flex;
+  gap: $size-2;
+  padding: $size-2 0;
+  border-bottom: 1px solid $outline;
+}
+
+.skeleton-comment-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-full;
+}
+
+.skeleton-comment-textarea {
+  flex: 1;
+  height: 80px;
+  background: linear-gradient(
+    90deg,
+    $surface-low 0%,
+    $outline 50%,
+    $surface-low 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-small;
+}
+
+.skeleton-comment-submit {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+}
+
+.skeleton-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: $size-3;
+}
+
+.skeleton-comment-item {
+  display: flex;
+  gap: $size-2;
+}
+
+.skeleton-comment-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: $size-1;
+}
+
+.skeleton-comment-header {
+  display: flex;
+  justify-content: space-between;
+  gap: $size-2;
+}
+
+.skeleton-comment-author {
+  width: 120px;
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+}
+
+.skeleton-comment-time {
+  width: 80px;
+  height: 14px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+}
+
+.skeleton-comment-text {
+  width: 100%;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+
+  &.short {
+    width: 80%;
+  }
+}
+
+.skeleton-comment-like {
+  width: 60px;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    $outline 0%,
+    $outline-variant 50%,
+    $outline 100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 2s infinite;
+  border-radius: $corner-extra-small;
+}

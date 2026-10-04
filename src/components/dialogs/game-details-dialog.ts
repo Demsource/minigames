@@ -1,4 +1,6 @@
 import './game-details-dialog.scss';
+import '../../components/skeletons/skeleton-loader-game-details-dialog.scss';
+import '../../components/skeletons/skeleton-loader-comments.scss';
 import closeButtonIcon from '../../assets/icons/close-button-wrapper.svg';
 import starIcon from '../../assets/icons/star.svg';
 import heartIcon from '../../assets/icons/heart.svg';
@@ -6,18 +8,37 @@ import heartBlackIcon from '../../assets/icons/heart-black.svg';
 import sendCommentIconDefault from '../../assets/icons/send-comment-trigger-default.svg';
 import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-disabled.svg';
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
-import gameData from '../../data/game-tukoni-forest-keepers.json';
-import commentsData from '../../data/comments-tukoni-forest-keepers.json';
+import {
+  apiCall,
+  GameDetails,
+  GameDetailsResponse,
+  Comment,
+  CommentsResponse,
+} from '../../services/api';
+import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
+import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
+import { ErrorBanner } from '../../components/error-banner/error-banner';
+import { EmptyState } from '../../components/empty-state/empty-state';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
   private dialog!: HTMLElement;
-  private isLiked: boolean;
+  private gameInfoContainer!: HTMLElement;
+  private topRecordsContainer!: HTMLElement;
+  private isLiked: boolean = false;
+  private currentGameSlug: string = '';
+  private currentGameData: GameDetails | undefined;
+  private currentCommentsData: Comment[] = [];
+  private totalCommentsCount: number = 0;
+  private commentsLoadFailed: boolean = false;
 
   constructor() {
-    this.isLiked = gameData.data.isLikedByCurrentUser;
     this.createDOM();
     this.attachEvents();
+  }
+
+  private getAssetPath(assetPath: string): string {
+    return assetPath.startsWith('/') ? `/minigames${assetPath}` : assetPath;
   }
 
   private createDOM() {
@@ -27,90 +48,19 @@ class GameDetailsDialogClass {
     this.dialog = document.createElement('div');
     this.dialog.className = 'game-details-dialog';
 
-    const formattedLikes = this.formatLikesCount(gameData.data.likesCount);
-
     this.dialog.innerHTML = `
       <div class="dialog-header">
         <button type="button" class="close-button" aria-label="Close dialog">
           <img src="${closeButtonIcon}" alt="Close" />
         </button>
       </div>
-      <div class="dialog-image">
-        <img src="${gameData.data.heroImage}" alt="${gameData.data.name}" />
-      </div>
-      <div class="game-info">
-        <div class="game-header">
-          <h1 class="game-title">${gameData.data.name}</h1>
-          <div class="game-meta">
-            <div class="rating">
-              <img src="${starIcon}" alt="" class="meta-icon" />
-              <span>${gameData.data.rating}</span>
-            </div>
-            <div class="likes">
-              <img src="${heartIcon}" alt="" class="meta-icon" />
-              <span>${formattedLikes}</span>
-            </div>
-          </div>
-        </div>
-
-        <p class="game-description">${gameData.data.fullDescription}</p>
-
-        <div class="game-specs">
-          <div class="spec-badge">
-            <div class="spec-label">Genre</div>
-            <div class="spec-value">${gameData.data.specs.genre}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Players</div>
-            <div class="spec-value">${gameData.data.specs.players}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Duration</div>
-            <div class="spec-value">${gameData.data.specs.duration}</div>
-          </div>
-          <div class="spec-badge">
-            <div class="spec-label">Price</div>
-            <div class="spec-value">${gameData.data.specs.price}</div>
-          </div>
-        </div>
-
-        <div class="game-actions">
-          <button type="button" class="btn-play-now">Play Now</button>
-          <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
-            <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
-            <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="top-records-section">
-        <div class="top-records-header">
-          <h2 class="top-records-title">🏆 Top Records</h2>
-        </div>
-        <div class="top-records-list">
-          ${gameData.data.topRecords
-            .map((record) => {
-              const medalEmoji = this.getMedalEmoji(record.position);
-              const formattedScore = this.formatScore(record.score);
-              const daysAgo = this.calculateDaysAgo(record.achievedAt);
-              return `
-                <div class="top-record-item">
-                  <span class="medal">${medalEmoji}</span>
-                  <span class="player-name">${record.playerName}</span>
-                  <span class="record-score">${formattedScore}</span>
-                  <span class="record-date">${daysAgo}</span>
-                </div>
-              `;
-            })
-            .join('')}
-        </div>
-      </div>
-
+      <div class="dialog-image"></div>
+      <div class="game-info"></div>
+      <div class="top-records-section"></div>
       <div class="comments-section">
         <div class="comments-header">
-          <h2 class="comments-title">Comments (${commentsData.data.length})</h2>
+          <h2 class="comments-title">Comments</h2>
         </div>
-
         <div class="comment-form">
           <div class="comment-form-avatar">U</div>
           <textarea
@@ -123,36 +73,196 @@ class GameDetailsDialogClass {
             <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
           </button>
         </div>
-
-        <div class="comments-list">
-          ${commentsData.data
-            .map((comment) => {
-              const timeAgo = this.calculateTimeAgo(comment.createdAt);
-              const initial = comment.authorName.charAt(0).toUpperCase();
-              return `
-                <div class="comment-item">
-                  <div class="comment-avatar">${initial}</div>
-                  <div class="comment-content">
-                    <div class="comment-header">
-                      <span class="comment-author">${comment.authorName}</span>
-                      <span class="comment-time">${timeAgo}</span>
-                    </div>
-                    <p class="comment-text">${comment.text}</p>
-                    <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
-                      <img src="${heartBlackIcon}" alt="" class="like-icon" />
-                      <span class="like-count">${comment.likesCount}</span>
-                    </button>
-                  </div>
-                </div>
-              `;
-            })
-            .join('')}
-        </div>
+        <div class="comments-list"></div>
       </div>
     `;
 
+    this.gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    this.topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+
     this.backdrop.append(this.dialog);
     document.body.append(this.backdrop);
+  }
+
+  private renderGameContent(gameData: GameDetails) {
+    this.currentGameData = gameData;
+    this.isLiked = gameData.isLikedByCurrentUser;
+
+    const isMissingData = !gameData || Object.keys(gameData).length === 0;
+
+    if (isMissingData) {
+      this.gameInfoContainer.replaceChildren(
+        EmptyState({
+          title: 'Game Data Unavailable',
+          message:
+            'This game information is currently unavailable. Please try again later.',
+          isDismissible: false,
+        })
+      );
+
+      this.topRecordsContainer.replaceChildren();
+
+      const commentsSection = this.dialog.querySelector(
+        '.comments-section'
+      ) as HTMLElement;
+      commentsSection.replaceChildren();
+
+      return;
+    }
+
+    const dialogImage = this.dialog.querySelector(
+      '.dialog-image'
+    ) as HTMLElement;
+    const imagePath = this.getAssetPath(gameData.heroImage);
+    dialogImage.innerHTML = `<img src="${imagePath}" alt="${gameData.name}" />`;
+
+    const formattedLikes = this.formatLikesCount(gameData.likesCount);
+
+    this.gameInfoContainer.innerHTML = `
+      <div class="game-header">
+        <h1 class="game-title">${gameData.name}</h1>
+        <div class="game-meta">
+          <div class="rating">
+            <img src="${starIcon}" alt="" class="meta-icon" />
+            <span>${gameData.rating}</span>
+          </div>
+          <div class="likes">
+            <img src="${heartIcon}" alt="" class="meta-icon" />
+            <span>${formattedLikes}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="game-description">${gameData.fullDescription}</p>
+
+      <div class="game-specs">
+        <div class="spec-badge">
+          <div class="spec-label">Genre</div>
+          <div class="spec-value">${gameData.specs.genre}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Players</div>
+          <div class="spec-value">${gameData.specs.players}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Duration</div>
+          <div class="spec-value">${gameData.specs.duration}</div>
+        </div>
+        <div class="spec-badge">
+          <div class="spec-label">Price</div>
+          <div class="spec-value">${gameData.specs.price}</div>
+        </div>
+      </div>
+
+      <div class="game-actions">
+        <button type="button" class="btn-play-now">Play Now</button>
+        <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
+          <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
+          <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+        </button>
+      </div>
+    `;
+
+    this.topRecordsContainer.innerHTML = `
+      <div class="top-records-header">
+        <h2 class="top-records-title">🏆 Top Records</h2>
+      </div>
+      <div class="top-records-list">
+        ${gameData.topRecords
+          .map((record) => {
+            const medalEmoji = this.getMedalEmoji(record.position);
+            const formattedScore = this.formatScore(record.score);
+            const daysAgo = this.calculateDaysAgo(record.achievedAt);
+            return `
+              <div class="top-record-item">
+                <span class="medal">${medalEmoji}</span>
+                <span class="player-name">${record.playerName}</span>
+                <span class="record-score">${formattedScore}</span>
+                <span class="record-date">${daysAgo}</span>
+              </div>
+            `;
+          })
+          .join('')}
+      </div>
+    `;
+
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
+    ) as HTMLElement;
+
+    if (this.commentsLoadFailed) {
+      commentsSection.innerHTML = `
+        <div class="comments-header">
+          <h2 class="comments-title">Comments</h2>
+        </div>
+      `;
+      const errorBanner = ErrorBanner({
+        message: 'Failed to load comments. Please try again.',
+        onRetry: async () => {
+          await this.loadComments();
+          this.renderGameContent(this.currentGameData!);
+        },
+        isDismissible: true,
+      });
+      commentsSection.append(errorBanner);
+      return;
+    }
+
+    commentsSection.innerHTML = `
+      <div class="comments-header">
+        <h2 class="comments-title">Comments (${this.totalCommentsCount})</h2>
+      </div>
+
+      <div class="comment-form">
+        <div class="comment-form-avatar">U</div>
+        <textarea
+          class="comment-textarea"
+          name="comment"
+          placeholder="Write a comment..."
+          rows="1"
+        ></textarea>
+        <button type="button" class="comment-submit-btn" aria-label="Submit comment">
+          <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
+        </button>
+      </div>
+
+      <div class="comments-list">
+        ${
+          this.currentCommentsData.length === 0
+            ? EmptyState({
+                title: 'No comments yet',
+                message: 'Be the first to share your thoughts about this game!',
+                isDismissible: false,
+              }).outerHTML
+            : this.currentCommentsData
+                .map((comment) => {
+                  const timeAgo = this.calculateTimeAgo(comment.createdAt);
+                  const initial = comment.authorName.charAt(0).toUpperCase();
+                  return `
+              <div class="comment-item">
+                <div class="comment-avatar">${initial}</div>
+                <div class="comment-content">
+                  <div class="comment-header">
+                    <span class="comment-author">${comment.authorName}</span>
+                    <span class="comment-time">${timeAgo}</span>
+                  </div>
+                  <p class="comment-text">${comment.text}</p>
+                  <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
+                    <img src="${heartBlackIcon}" alt="" class="like-icon" />
+                    <span class="like-count">${comment.likesCount}</span>
+                  </button>
+                </div>
+              </div>
+            `;
+                })
+                .join('')
+        }
+      </div>
+    `;
   }
 
   private attachEvents() {
@@ -256,7 +366,7 @@ class GameDetailsDialogClass {
     }
 
     if (diffMinutes < 60) {
-      return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
+      return diffMinutes === 1 ? '1 min ago' : `${diffMinutes} min ago`;
     }
 
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
@@ -269,8 +379,18 @@ class GameDetailsDialogClass {
       return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
     }
 
-    const weeks = Math.floor(diffDays / 7);
-    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 4) {
+      return diffWeeks === 1 ? '1 week ago' : `${diffWeeks} weeks ago`;
+    }
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
+    }
+
+    const diffYears = Math.floor(diffDays / 365);
+    return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
   }
 
   private toggleFavorite(button: HTMLButtonElement) {
@@ -334,7 +454,11 @@ class GameDetailsDialogClass {
   }
 
   private resetFavoriteState() {
-    this.isLiked = gameData.data.isLikedByCurrentUser;
+    if (!this.currentGameData) {
+      return;
+    }
+
+    this.isLiked = this.currentGameData.isLikedByCurrentUser;
     const favoriteButton =
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
@@ -372,7 +496,7 @@ class GameDetailsDialogClass {
     for (const button of commentLikeButtons) {
       const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
       const commentId = button.dataset.commentId;
-      const commentData = commentsData.data.find(
+      const commentData = this.currentCommentsData.find(
         (c) => c.commentId === commentId
       );
 
@@ -383,11 +507,144 @@ class GameDetailsDialogClass {
     }
   }
 
-  public open() {
-    this.resetFavoriteState();
-    this.resetCommentState();
+  private attachGameActionEvents() {
+    const favoriteButton =
+      this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
+
+    favoriteButton?.addEventListener('click', () => {
+      this.toggleFavorite(favoriteButton);
+    });
+
+    const commentLikeButtons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+    for (const button of commentLikeButtons) {
+      button.addEventListener('click', () => {
+        this.toggleCommentLike(button);
+      });
+    }
+  }
+
+  private showSkeleton() {
+    const dialogImage = this.dialog.querySelector(
+      '.dialog-image'
+    ) as HTMLElement;
+    const gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    const topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
+    ) as HTMLElement;
+
+    const skeletonElement = SkeletonGameDetailsDialog();
+    const skeletonCommentsElement = SkeletonCommentsSection();
+
+    const skeletonImage =
+      skeletonElement.querySelector('.skeleton-dialog-image')?.outerHTML || '';
+    const skeletonGameInfo =
+      skeletonElement.querySelector('.skeleton-game-info')?.getHTML() || '';
+    const skeletonTopRecords =
+      skeletonElement.querySelector('.skeleton-top-records')?.getHTML() || '';
+    const skeletonCommentsContent = skeletonCommentsElement.getHTML() || '';
+
+    dialogImage.innerHTML = skeletonImage;
+    gameInfoContainer.innerHTML = skeletonGameInfo;
+    topRecordsContainer.innerHTML = skeletonTopRecords;
+    commentsSection.innerHTML = skeletonCommentsContent;
+  }
+
+  private showError() {
+    const gameInfoContainer = this.dialog.querySelector(
+      '.game-info'
+    ) as HTMLElement;
+    const topRecordsContainer = this.dialog.querySelector(
+      '.top-records-section'
+    ) as HTMLElement;
+    const commentsSection = this.dialog.querySelector(
+      '.comments-section'
+    ) as HTMLElement;
+
+    gameInfoContainer.replaceChildren();
+    topRecordsContainer.replaceChildren();
+    commentsSection.replaceChildren();
+
+    const errorBanner = ErrorBanner({
+      message: 'Failed to load game details. Please try again.',
+      onRetry: async () => {
+        this.showSkeleton();
+        await this.loadGameData();
+      },
+      isDismissible: true,
+    });
+
+    gameInfoContainer.append(errorBanner);
+  }
+
+  private async loadComments() {
+    try {
+      const response = await apiCall<CommentsResponse>(
+        `/api/games/${this.currentGameSlug}/comments?limit=3&sort=newest`
+      );
+      this.currentCommentsData = response.data;
+      this.totalCommentsCount = response.meta.totalComments;
+      this.commentsLoadFailed = false;
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+      this.currentCommentsData = [];
+      this.totalCommentsCount = 0;
+      this.commentsLoadFailed = true;
+    }
+  }
+
+  private async loadGameData() {
+    try {
+      const [gameResponse] = await Promise.all([
+        apiCall<GameDetailsResponse>(`/api/games/${this.currentGameSlug}`),
+        this.loadComments(),
+      ]);
+      this.renderGameContent(gameResponse.data);
+
+      try {
+        this.attachGameActionEvents();
+      } catch (error) {
+        console.error('Error attaching game action events:', error);
+      }
+
+      try {
+        this.resetFavoriteState();
+      } catch (error) {
+        console.error('Error resetting favorite state:', error);
+      }
+
+      try {
+        this.resetCommentState();
+      } catch (error) {
+        console.error('Error resetting comment state:', error);
+      }
+    } catch (error) {
+      console.error('Failed to load game details:', error);
+      this.showError();
+    }
+  }
+
+  public setGameSlug(slug: string) {
+    this.currentGameSlug = slug;
+  }
+
+  public async open() {
+    if (!this.currentGameSlug) {
+      console.error('Game slug not set');
+      return;
+    }
+
+    this.commentsLoadFailed = false;
     this.backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
+    this.showSkeleton();
+
+    await this.loadGameData();
   }
 
   public close() {
