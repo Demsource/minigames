@@ -68,6 +68,24 @@ export interface GameDetailsResponse {
   data: GameDetails;
 }
 
+export interface Comment {
+  commentId: string;
+  authorName: string;
+  text: string;
+  likesCount: number;
+  isLikedByCurrentUser: boolean;
+  createdAt: string;
+}
+
+export interface CommentsResponse {
+  data: Comment[];
+  meta: {
+    totalComments: number;
+    returnedCount: number;
+    sort: string;
+  };
+}
+
 export async function apiCall<T>(
   path: string,
   options?: RequestInit

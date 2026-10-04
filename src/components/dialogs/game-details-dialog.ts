@@ -8,8 +8,13 @@ import heartBlackIcon from '../../assets/icons/heart-black.svg';
 import sendCommentIconDefault from '../../assets/icons/send-comment-trigger-default.svg';
 import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-disabled.svg';
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
-import commentsData from '../../data/comments-tukoni-forest-keepers.json';
-import { apiCall, GameDetails, GameDetailsResponse } from '../../services/api';
+import {
+  apiCall,
+  GameDetails,
+  GameDetailsResponse,
+  Comment,
+  CommentsResponse,
+} from '../../services/api';
 import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
 import { ErrorBanner } from '../../components/error-banner/error-banner';
@@ -23,6 +28,8 @@ class GameDetailsDialogClass {
   private isLiked: boolean = false;
   private currentGameSlug: string = '';
   private currentGameData: GameDetails | undefined;
+  private currentCommentsData: Comment[] = [];
+  private totalCommentsCount: number = 0;
 
   constructor() {
     this.createDOM();
@@ -187,7 +194,7 @@ class GameDetailsDialogClass {
     ) as HTMLElement;
     commentsSection.innerHTML = `
       <div class="comments-header">
-        <h2 class="comments-title">Comments (${commentsData.data.length})</h2>
+        <h2 class="comments-title">Comments (${this.totalCommentsCount})</h2>
       </div>
 
       <div class="comment-form">
@@ -204,7 +211,7 @@ class GameDetailsDialogClass {
       </div>
 
       <div class="comments-list">
-        ${commentsData.data
+        ${this.currentCommentsData
           .map((comment) => {
             const timeAgo = this.calculateTimeAgo(comment.createdAt);
             const initial = comment.authorName.charAt(0).toUpperCase();
@@ -331,7 +338,7 @@ class GameDetailsDialogClass {
     }
 
     if (diffMinutes < 60) {
-      return diffMinutes === 1 ? '1 minute ago' : `${diffMinutes} minutes ago`;
+      return diffMinutes === 1 ? '1 min ago' : `${diffMinutes} min ago`;
     }
 
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
@@ -344,8 +351,18 @@ class GameDetailsDialogClass {
       return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
     }
 
-    const weeks = Math.floor(diffDays / 7);
-    return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+    const diffWeeks = Math.floor(diffDays / 7);
+    if (diffWeeks < 4) {
+      return diffWeeks === 1 ? '1 week ago' : `${diffWeeks} weeks ago`;
+    }
+
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
+    }
+
+    const diffYears = Math.floor(diffDays / 365);
+    return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
   }
 
   private toggleFavorite(button: HTMLButtonElement) {
@@ -451,7 +468,7 @@ class GameDetailsDialogClass {
     for (const button of commentLikeButtons) {
       const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
       const commentId = button.dataset.commentId;
-      const commentData = commentsData.data.find(
+      const commentData = this.currentCommentsData.find(
         (c) => c.commentId === commentId
       );
 
@@ -537,12 +554,27 @@ class GameDetailsDialogClass {
     gameInfoContainer.append(errorBanner);
   }
 
+  private async loadComments() {
+    try {
+      const response = await apiCall<CommentsResponse>(
+        `/api/games/${this.currentGameSlug}/comments?limit=3&sort=newest`
+      );
+      this.currentCommentsData = response.data;
+      this.totalCommentsCount = response.meta.totalComments;
+    } catch (error) {
+      console.error('Failed to load comments:', error);
+      this.currentCommentsData = [];
+      this.totalCommentsCount = 0;
+    }
+  }
+
   private async loadGameData() {
     try {
-      const response = await apiCall<GameDetailsResponse>(
-        `/api/games/${this.currentGameSlug}`
-      );
-      this.renderGameContent(response.data);
+      const [gameResponse] = await Promise.all([
+        apiCall<GameDetailsResponse>(`/api/games/${this.currentGameSlug}`),
+        this.loadComments(),
+      ]);
+      this.renderGameContent(gameResponse.data);
 
       try {
         this.attachGameActionEvents();
