@@ -488,12 +488,13 @@ export function NewGames(): HTMLElement {
 
       const gameCards = section.querySelectorAll('.game-card');
       for (const card of gameCards) {
-        card.addEventListener('click', () => {
+        const cardElement = card as HTMLElement;
+        cardElement.addEventListener('click', () => {
           if (!slider || slider.wasDragged()) {
             return;
           }
 
-          const gameSlug = card.dataset.gameSlug;
+          const gameSlug = cardElement.dataset.gameSlug;
           if (!gameSlug) {
             return;
           }
