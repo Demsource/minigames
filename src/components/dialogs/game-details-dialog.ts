@@ -19,6 +19,7 @@ import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-l
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
 import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
+import { router } from '../../app/router';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -31,10 +32,48 @@ class GameDetailsDialogClass {
   private currentCommentsData: Comment[] = [];
   private totalCommentsCount: number = 0;
   private commentsLoadFailed: boolean = false;
+  // True when the history entry below is the page without the dialog
+  private canCloseWithBack: boolean = false;
+  private hasHandledInitialRoute: boolean = false;
 
   constructor() {
     this.createDOM();
     this.attachEvents();
+    router.subscribe(({ query }) =>
+      this.syncWithUrl(query.get('game') ?? undefined)
+    );
+  }
+
+  private isOpen(): boolean {
+    return this.backdrop.classList.contains('is-open');
+  }
+
+  // The `game` query param is the source of truth for the dialog
+  private syncWithUrl(slug: string | undefined) {
+    if (slug) {
+      if (!this.isOpen() || slug !== this.currentGameSlug) {
+        // A deep link has no dialog-less entry below it to go back to
+        this.canCloseWithBack = this.hasHandledInitialRoute;
+        this.setGameSlug(slug);
+        this.open();
+      }
+    } else if (this.isOpen()) {
+      this.close();
+    }
+
+    this.hasHandledInitialRoute = true;
+  }
+
+  private requestClose() {
+    if (!this.isOpen()) {
+      return;
+    }
+
+    if (this.canCloseWithBack) {
+      globalThis.history.back();
+    } else {
+      router.setQuery({ game: undefined }, { replace: true });
+    }
   }
 
   private getAssetPath(assetPath: string): string {
@@ -270,7 +309,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelector<HTMLButtonElement>('.close-button');
 
     closeButton?.addEventListener('click', () => {
-      this.close();
+      this.requestClose();
     });
 
     const favoriteButton =
@@ -321,16 +360,13 @@ class GameDetailsDialogClass {
 
     this.backdrop.addEventListener('click', (event) => {
       if (event.target === this.backdrop) {
-        this.close();
+        this.requestClose();
       }
     });
 
     document.addEventListener('keydown', (event) => {
-      if (
-        event.key === 'Escape' &&
-        this.backdrop.classList.contains('is-open')
-      ) {
-        this.close();
+      if (event.key === 'Escape' && this.isOpen()) {
+        this.requestClose();
       }
     });
   }
@@ -627,6 +663,11 @@ class GameDetailsDialogClass {
       console.error('Failed to load game details:', error);
       this.showError();
     }
+  }
+
+  // Opens the dialog by pushing `?game=<slug>`; the URL listener does the rest
+  public show(slug: string) {
+    router.setQuery({ game: slug });
   }
 
   public setGameSlug(slug: string) {

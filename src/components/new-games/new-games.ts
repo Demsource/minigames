@@ -499,8 +499,7 @@ export function NewGames(): HTMLElement {
             return;
           }
 
-          GameDetailsDialog.setGameSlug(gameSlug);
-          GameDetailsDialog.open();
+          GameDetailsDialog.show(gameSlug);
         });
       }
     } catch (error) {
