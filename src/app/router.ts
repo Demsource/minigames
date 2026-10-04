@@ -57,14 +57,6 @@ export class Router {
     this.rootElement.replaceChildren();
     if (handler) {
       this.rootElement.append(handler(relativePath));
-    } else {
-      this.rootElement.innerHTML = `
-  <div class="page-container not-found">
-    <h1>404 - Page Not Found</h1>
-    <p>The page you are looking for does not exist.</p>
-    <a href="/" data-link class="nav-link">Go Home</a>
-  </div>
-`;
     }
   }
 
