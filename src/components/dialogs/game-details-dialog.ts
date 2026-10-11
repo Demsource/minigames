@@ -14,6 +14,8 @@ import {
   getGameDetails,
   postComment,
   toggleGameFavorite,
+  toggleCommentLike,
+  CommentLike,
   GameDetails,
   Comment,
   TopRecord,
@@ -77,6 +79,8 @@ function getCommentErrorMessage(error: unknown): string {
     }
   }
 }
+
+const COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE = 'Please log in to like comments.';
 
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
@@ -578,7 +582,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
     for (const button of commentLikeButtons) {
       button.addEventListener('click', () => {
-        this.toggleCommentLike(button);
+        void this.handleCommentLike(button);
       });
     }
 
@@ -601,22 +605,63 @@ class GameDetailsDialogClass {
     textarea.style.height = `${newHeight}px`;
   }
 
-  private toggleCommentLike(button: HTMLButtonElement) {
+  // One POST flips the like; the UI changes only from the server's
+  // response. Never retried: a second POST could undo the first.
+  private async handleCommentLike(button: HTMLButtonElement) {
+    const commentId = button.dataset.commentId;
+    if (!commentId) {
+      return;
+    }
+
+    const wasGuest = !getSession();
     if (!canPerformProtectedAction()) {
+      // Expiry shows its own Snackbar; a guest gets the warning
+      if (wasGuest) {
+        showSnackbar(COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE);
+      }
+      return;
+    }
+    const email = getSession()?.email;
+    if (!email) {
       return;
     }
 
-    button.classList.toggle('is-liked');
+    try {
+      const { data } = await toggleCommentLike(commentId, email);
+      this.applyCommentLike(commentId, data);
+    } catch {
+      showSnackbar("Couldn't update your like. Please try again.");
+    }
+  }
+
+  // Writes the server's like state to the stored comment and its button.
+  // Looked up by id because the list may have re-rendered meanwhile.
+  private applyCommentLike(commentId: string, like: CommentLike) {
+    const comment = this.currentCommentsData.find(
+      (c) => c.commentId === commentId
+    );
+    if (comment) {
+      comment.isLikedByCurrentUser = like.isLikedByCurrentUser;
+      comment.likesCount = like.likesCount;
+    }
+
+    const button = this.findCommentLikeButton(commentId);
+    if (!button) {
+      return;
+    }
+    button.classList.toggle('is-liked', like.isLikedByCurrentUser);
     const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
-    if (!likeCount) {
-      return;
+    if (likeCount) {
+      likeCount.textContent = String(like.likesCount);
     }
+  }
 
-    const currentCount = Number(likeCount.textContent || '0');
-    const isLiked = button.classList.contains('is-liked');
-    likeCount.textContent = isLiked
-      ? (currentCount + 1).toString()
-      : (currentCount - 1).toString();
+  private findCommentLikeButton(
+    commentId: string
+  ): HTMLButtonElement | undefined {
+    const buttons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+    return [...buttons].find((b) => b.dataset.commentId === commentId);
   }
 
   private calculateTimeAgo(dateString: string): string {
@@ -1078,7 +1123,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
     for (const button of commentLikeButtons) {
       button.addEventListener('click', () => {
-        this.toggleCommentLike(button);
+        void this.handleCommentLike(button);
       });
     }
   }
