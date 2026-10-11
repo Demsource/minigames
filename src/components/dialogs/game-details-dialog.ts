@@ -41,6 +41,8 @@ function setText(root: ParentNode, selector: string, value: string) {
 }
 
 const COMMENT_MAX_LENGTH = 500;
+// Number of $avatar-random-* tokens (see game-details-dialog.scss)
+const COMMENT_AVATAR_COLOR_COUNT = 5;
 const AUTHOR_NAME_MIN_LENGTH = 2;
 const AUTHOR_NAME_MAX_LENGTH = 30;
 
@@ -121,6 +123,8 @@ class GameDetailsDialogClass {
   private favoritePendingSlug: string | undefined;
   // Slug of the game whose comment POST is in flight; its form stays locked
   private commentPendingSlug: string | undefined;
+  // Commenter name → avatar color variant; reset when the view mounts fresh
+  private avatarColors = new Map<string, number>();
 
   constructor() {
     this.createDOM();
@@ -442,6 +446,17 @@ class GameDetailsDialogClass {
     );
   }
 
+  // Random token color on a commenter's first appearance, then reused so
+  // re-renders and comment refreshes keep it while the view is mounted
+  private getAvatarColor(authorName: string): number {
+    let variant = this.avatarColors.get(authorName);
+    if (variant === undefined) {
+      variant = Math.floor(Math.random() * COMMENT_AVATAR_COLOR_COUNT) + 1;
+      this.avatarColors.set(authorName, variant);
+    }
+    return variant;
+  }
+
   // Built with textContent: API values are rendered as text, never as HTML
   private createCommentItem(comment: Comment): HTMLElement {
     const item = document.createElement('div');
@@ -449,6 +464,9 @@ class GameDetailsDialogClass {
 
     const avatar = document.createElement('div');
     avatar.className = 'comment-avatar';
+    avatar.classList.add(
+      `comment-avatar--color-${this.getAvatarColor(comment.authorName)}`
+    );
     avatar.textContent = getFirstInitial(comment.authorName);
 
     const content = document.createElement('div');
@@ -1160,6 +1178,8 @@ class GameDetailsDialogClass {
     }
 
     this.commentsLoadFailed = false;
+    // Fresh mount (new game or reopen); resuming after Auth skips open()
+    this.avatarColors.clear();
     this.backdrop.classList.add('is-open');
     document.body.style.overflow = 'hidden';
     this.showSkeleton();

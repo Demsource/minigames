@@ -1,5 +1,14 @@
 @use '../../styles/_tokens' as *;
 
+// Keys must match COMMENT_AVATAR_COLOR_COUNT in game-details-dialog.ts
+$comment-avatar-colors: (
+  1: $avatar-random-1,
+  2: $avatar-random-2,
+  3: $avatar-random-3,
+  4: $avatar-random-4,
+  5: $avatar-random-5,
+);
+
 .game-details-backdrop {
   position: fixed;
   top: 0;
@@ -386,6 +395,12 @@
     font-weight: $bold;
     color: $on-primary;
     flex-shrink: 0;
+
+    @each $variant, $color in $comment-avatar-colors {
+      &--color-#{$variant} {
+        background-color: $color;
+      }
+    }
   }
 
   .comment-content {
