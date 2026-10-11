@@ -10,7 +10,9 @@ import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-dis
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import {
   apiCall,
+  ApiError,
   getGameDetails,
+  toggleGameFavorite,
   GameDetails,
   Comment,
   CommentsResponse,
@@ -20,8 +22,33 @@ import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loa
 import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
+import { showSnackbar } from '../snackbar/snackbar';
 import { canPerformProtectedAction } from '../../services/session-guard';
 import { getSession, subscribeSession } from '../../services/session-state';
+
+const FAVORITES_LOGIN_REQUIRED_MESSAGE =
+  'Please log in to add games to your favorites.';
+
+function getFavoriteErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    // Network failure or timeout: the outcome is unknown, so don't retry
+    return "Couldn't confirm the favorite change. Please check and try again.";
+  }
+  switch (error.status) {
+    case 401: {
+      return 'Please log in to manage your favorites.';
+    }
+    case 404: {
+      return 'This game could not be found.';
+    }
+    case 429: {
+      return error.message;
+    }
+    default: {
+      return "Couldn't update favorites. Please try again.";
+    }
+  }
+}
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -39,6 +66,8 @@ class GameDetailsDialogClass {
   private hasSeenUrlWithoutGame: boolean = false;
   // Hidden behind the Auth dialog with its content and state preserved
   private isSuspended: boolean = false;
+  // A favorite POST is in flight; further clicks are ignored
+  private isFavoritePending: boolean = false;
 
   constructor() {
     this.createDOM();
@@ -350,7 +379,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
     favoriteButton?.addEventListener('click', () => {
-      this.toggleFavorite(favoriteButton);
+      void this.toggleFavorite();
     });
 
     const textarea =
@@ -467,18 +496,45 @@ class GameDetailsDialogClass {
     return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
   }
 
-  private toggleFavorite(button: HTMLButtonElement) {
-    if (!canPerformProtectedAction()) {
+  // One POST flips the favorite; the UI changes only from the server's
+  // response. Never retried: a second POST could undo the first.
+  private async toggleFavorite() {
+    if (this.isFavoritePending) {
       return;
     }
 
-    this.isLiked = !this.isLiked;
-    button.classList.toggle('is-favorited');
-    const textSpan = button.querySelector('.btn-text');
-    if (textSpan) {
-      textSpan.textContent = this.isLiked
-        ? 'Remove from Favorites'
-        : 'Add to Favorites';
+    const wasGuest = !getSession();
+    if (!canPerformProtectedAction()) {
+      // Expiry shows its own Snackbar; a guest gets the warning
+      if (wasGuest) {
+        showSnackbar(FAVORITES_LOGIN_REQUIRED_MESSAGE);
+      }
+      return;
+    }
+
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+    if (!email) {
+      return;
+    }
+
+    this.isFavoritePending = true;
+    try {
+      const { data } = await toggleGameFavorite(slug, email);
+      // Game or user changed meanwhile: this result is not for this view
+      if (slug !== this.currentGameSlug || getSession()?.email !== email) {
+        return;
+      }
+      if (this.currentGameData) {
+        this.currentGameData.isLikedByCurrentUser = data.isFavorited;
+        this.currentGameData.likesCount = data.likesCount;
+      }
+      this.setFavoriteView(data.isFavorited);
+      this.setLikesCount(data.likesCount);
+    } catch (error) {
+      showSnackbar(getFavoriteErrorMessage(error));
+    } finally {
+      this.isFavoritePending = false;
     }
   }
 
@@ -646,7 +702,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
     favoriteButton?.addEventListener('click', () => {
-      this.toggleFavorite(favoriteButton);
+      void this.toggleFavorite();
     });
 
     const commentLikeButtons =
