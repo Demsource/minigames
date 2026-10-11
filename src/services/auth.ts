@@ -4,6 +4,8 @@ import {
   signOut,
   onAuthStateChanged,
   User,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
@@ -62,6 +64,23 @@ export function onUserStateChange(
 
 export function getCurrentUser(): User | null {
   return auth.currentUser;
+}
+
+export async function googleSignIn(): Promise<AuthResult> {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+    return { success: true };
+  } catch (error) {
+    const code = (error as { code?: string }).code;
+    if (code === 'auth/popup-closed-by-user') {
+      return { success: false, error: '' };
+    }
+    return {
+      success: false,
+      error: getErrorMessage(error),
+    };
+  }
 }
 
 function getErrorMessage(error: unknown): string {
