@@ -147,6 +147,51 @@ export function getGameDetails(
   );
 }
 
+export interface CommentResponse {
+  data: Comment;
+}
+
+export interface NewComment {
+  userEmail: string;
+  authorName: string;
+  text: string;
+}
+
+export const COMMENTS_LIMIT = 3;
+
+// Latest comments; personalized (isLikedByCurrentUser) when userEmail is
+// given. meta.totalComments holds the full count, not just the 3 returned.
+export function getComments(
+  gameSlug: string,
+  userEmail?: string
+): Promise<CommentsResponse> {
+  const query = new URLSearchParams({
+    limit: String(COMMENTS_LIMIT),
+    sort: 'newest',
+  });
+  if (userEmail) {
+    query.set('userEmail', userEmail);
+  }
+  return apiCall<CommentsResponse>(
+    `/api/games/${encodeURIComponent(gameSlug)}/comments?${query.toString()}`
+  );
+}
+
+// Creates a comment (201). Never retry an unknown outcome: it may post twice.
+export function postComment(
+  gameSlug: string,
+  comment: NewComment
+): Promise<CommentResponse> {
+  return apiCall<CommentResponse>(
+    `/api/games/${encodeURIComponent(gameSlug)}/comments`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(comment),
+    }
+  );
+}
+
 // Toggles the favorite: every successful call flips the state, so never
 // retry a call whose outcome is unknown
 export function toggleGameFavorite(

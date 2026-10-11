@@ -58,10 +58,10 @@ export function ErrorBanner(config: ErrorBannerConfig = {}): HTMLElement {
       retryButton.textContent = 'Retrying...';
       try {
         await onRetry();
-      } catch (error) {
+      } catch {
+        // Re-enabling the button is the feedback; the user can retry again
         retryButton.disabled = false;
         retryButton.textContent = 'Retry';
-        console.error('Retry failed:', error);
       }
     });
   }
