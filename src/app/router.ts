@@ -34,7 +34,9 @@ export class Router {
 
   private writeUrl(url: string, shouldReplace = false) {
     const currentUrl =
-      globalThis.location.pathname + globalThis.location.search;
+      globalThis.location.pathname +
+      globalThis.location.search +
+      globalThis.location.hash;
     if (url === currentUrl) {
       return;
     }
@@ -145,9 +147,18 @@ export class Router {
       }
     }
 
+    // Path and hash are kept; only the query changes
     const search = query.toString();
-    const url = globalThis.location.pathname + (search ? `?${search}` : '');
+    const url =
+      globalThis.location.pathname +
+      (search ? `?${search}` : '') +
+      globalThis.location.hash;
     this.writeUrl(url, options.replace);
+  }
+
+  // Drops one query param in place: no reload and no extra Back entry
+  public removeQuery(key: string) {
+    this.setQuery({ [key]: undefined }, { replace: true });
   }
 
   public handleRoute() {
