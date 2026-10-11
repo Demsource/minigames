@@ -6,7 +6,7 @@ import unicorn from 'eslint-plugin-unicorn';
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
   // Plugin configs and rules
   js.configs.recommended,
