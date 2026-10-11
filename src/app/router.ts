@@ -26,6 +26,7 @@ export class Router {
   private currentPath: string | undefined;
   private globalListeners: Set<RouteListener> = new Set();
   private pageListeners: Set<RouteListener> = new Set();
+  private beforeRouteHooks: Set<() => void> = new Set();
 
   constructor(base: string = '') {
     this.base = base;
@@ -112,6 +113,12 @@ export class Router {
     return () => listeners.delete(listener);
   }
 
+  // Runs before every page or dialog route is handled (including popstate)
+  public onBeforeRoute(hook: () => void): () => void {
+    this.beforeRouteHooks.add(hook);
+    return () => this.beforeRouteHooks.delete(hook);
+  }
+
   public getPath(): string {
     const pathname = globalThis.location.pathname;
     return pathname.startsWith(this.base)
@@ -144,6 +151,8 @@ export class Router {
   }
 
   public handleRoute() {
+    for (const hook of this.beforeRouteHooks) hook();
+
     const relativePath = this.getPath();
     const isPathChanged = relativePath !== this.currentPath;
 

@@ -15,6 +15,7 @@ import {
 import { login, signup, googleSignIn } from '../../services/auth';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../config/firebase';
+import { startSession } from '../../services/session-state';
 
 export type AuthMode = 'login' | 'register';
 
@@ -506,7 +507,7 @@ class AuthDialogClass {
       return;
     }
 
-    this.close();
+    this.completeAuth('login');
   }
 
   private async handleRegister() {
@@ -546,7 +547,7 @@ class AuthDialogClass {
       await updateProfile(user, { displayName: username });
     }
 
-    this.close();
+    this.completeAuth('register');
   }
 
   private async handleGoogleAuth(mode: 'login' | 'register') {
@@ -569,7 +570,19 @@ class AuthDialogClass {
       return;
     }
 
-    this.close();
+    this.completeAuth(mode);
+  }
+
+  // Starts the app session (after any profile update so displayName is
+  // current) and closes through the URL, so a Game Details suspended
+  // underneath is restored in authenticated mode
+  private completeAuth(mode: AuthMode) {
+    const user = auth.currentUser;
+    if (user) {
+      startSession(user);
+    }
+    this.setPending(false, mode);
+    this.requestClose();
   }
 
   // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
@@ -584,7 +597,10 @@ class AuthDialogClass {
 
   public close() {
     this.backdrop.classList.remove('is-open');
-    document.body.style.overflow = '';
+    // Keep scroll locked when a restored Game Details is still open
+    if (!document.querySelector('.game-details-backdrop.is-open')) {
+      document.body.style.overflow = '';
+    }
   }
 }
 
