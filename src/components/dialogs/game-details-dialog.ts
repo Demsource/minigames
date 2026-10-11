@@ -66,8 +66,9 @@ class GameDetailsDialogClass {
   private hasSeenUrlWithoutGame: boolean = false;
   // Hidden behind the Auth dialog with its content and state preserved
   private isSuspended: boolean = false;
-  // A favorite POST is in flight; further clicks are ignored
-  private isFavoritePending: boolean = false;
+  // Slug of the game whose favorite POST is in flight; that game's button
+  // stays locked until it settles, other games are unaffected
+  private favoritePendingSlug: string | undefined;
 
   constructor() {
     this.createDOM();
@@ -307,6 +308,9 @@ class GameDetailsDialogClass {
         onRetry: async () => {
           await this.loadComments();
           this.renderGameContent(this.currentGameData!);
+          // Re-render replaced the buttons: re-bind and restore their state
+          this.attachGameActionEvents();
+          this.updateFavoriteButton();
         },
         isDismissible: true,
       });
@@ -499,7 +503,7 @@ class GameDetailsDialogClass {
   // One POST flips the favorite; the UI changes only from the server's
   // response. Never retried: a second POST could undo the first.
   private async toggleFavorite() {
-    if (this.isFavoritePending) {
+    if (this.isFavoritePending()) {
       return;
     }
 
@@ -518,7 +522,8 @@ class GameDetailsDialogClass {
       return;
     }
 
-    this.isFavoritePending = true;
+    this.favoritePendingSlug = slug;
+    this.updateFavoriteButton();
     try {
       const { data } = await toggleGameFavorite(slug, email);
       // Game or user changed meanwhile: this result is not for this view
@@ -534,7 +539,9 @@ class GameDetailsDialogClass {
     } catch (error) {
       showSnackbar(getFavoriteErrorMessage(error));
     } finally {
-      this.isFavoritePending = false;
+      this.favoritePendingSlug = undefined;
+      // Unlock; on error this restores the confirmed (unchanged) label
+      this.updateFavoriteButton();
     }
   }
 
@@ -643,16 +650,36 @@ class GameDetailsDialogClass {
 
   private setFavoriteView(isFavorited: boolean) {
     this.isLiked = isFavorited;
+    this.updateFavoriteButton();
+  }
+
+  // Locked only for the game whose request is in flight
+  private isFavoritePending(): boolean {
+    return this.favoritePendingSlug === this.currentGameSlug;
+  }
+
+  // Renders favorite and pending state onto the current button
+  private updateFavoriteButton() {
     const favoriteButton =
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
-
     if (!favoriteButton) {
       return;
     }
 
+    const isPending = this.isFavoritePending();
     favoriteButton.classList.toggle('is-favorited', this.isLiked);
+    favoriteButton.classList.toggle('is-pending', isPending);
+    favoriteButton.disabled = isPending;
+    favoriteButton.setAttribute('aria-busy', String(isPending));
+    favoriteButton.setAttribute('aria-pressed', String(this.isLiked));
+
     const textSpan = favoriteButton.querySelector('.btn-text');
-    if (textSpan) {
+    if (!textSpan) {
+      return;
+    }
+    if (isPending) {
+      textSpan.textContent = 'Saving…';
+    } else {
       textSpan.textContent = this.isLiked
         ? 'Remove from Favorites'
         : 'Add to Favorites';
