@@ -15,6 +15,7 @@ import {
   toggleGameFavorite,
   GameDetails,
   Comment,
+  TopRecord,
 } from '../../services/api';
 import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
@@ -24,6 +25,14 @@ import { router } from '../../app/router';
 import { showSnackbar } from '../snackbar/snackbar';
 import { canPerformProtectedAction } from '../../services/session-guard';
 import { getSession, subscribeSession } from '../../services/session-state';
+
+// Sets API-provided values as plain text, never parsed as HTML
+function setText(root: ParentNode, selector: string, value: string) {
+  const element = root.querySelector(selector);
+  if (element) {
+    element.textContent = value;
+  }
+}
 
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
@@ -219,78 +228,79 @@ class GameDetailsDialogClass {
     const dialogImage = this.dialog.querySelector(
       '.dialog-image'
     ) as HTMLElement;
-    const imagePath = this.getAssetPath(gameData.heroImage);
-    dialogImage.innerHTML = `<img src="${imagePath}" alt="${gameData.name}" />`;
-
-    const formattedLikes = this.formatLikesCount(gameData.likesCount);
+    // Static markup only; every API value is set below as text or as an
+    // element property, never parsed as HTML
+    const heroImage = document.createElement('img');
+    heroImage.src = this.getAssetPath(gameData.heroImage);
+    heroImage.alt = gameData.name;
+    dialogImage.replaceChildren(heroImage);
 
     this.gameInfoContainer.innerHTML = `
       <div class="game-header">
-        <h1 class="game-title">${gameData.name}</h1>
+        <h1 class="game-title"></h1>
         <div class="game-meta">
           <div class="rating">
             <img src="${starIcon}" alt="" class="meta-icon" />
-            <span>${gameData.rating}</span>
+            <span class="rating-value"></span>
           </div>
           <div class="likes">
             <img src="${heartIcon}" alt="" class="meta-icon" />
-            <span class="likes-count">${formattedLikes}</span>
+            <span class="likes-count"></span>
           </div>
         </div>
       </div>
 
-      <p class="game-description">${gameData.fullDescription}</p>
+      <p class="game-description"></p>
 
       <div class="game-specs">
         <div class="spec-badge">
           <div class="spec-label">Genre</div>
-          <div class="spec-value">${gameData.specs.genre}</div>
+          <div class="spec-value" data-spec="genre"></div>
         </div>
         <div class="spec-badge">
           <div class="spec-label">Players</div>
-          <div class="spec-value">${gameData.specs.players}</div>
+          <div class="spec-value" data-spec="players"></div>
         </div>
         <div class="spec-badge">
           <div class="spec-label">Duration</div>
-          <div class="spec-value">${gameData.specs.duration}</div>
+          <div class="spec-value" data-spec="duration"></div>
         </div>
         <div class="spec-badge">
           <div class="spec-label">Price</div>
-          <div class="spec-value">${gameData.specs.price}</div>
+          <div class="spec-value" data-spec="price"></div>
         </div>
       </div>
 
       <div class="game-actions">
         <button type="button" class="btn-play-now">Play Now</button>
-        <button type="button" class="btn-favorite ${this.isLiked ? 'is-favorited' : ''}">
+        <button type="button" class="btn-favorite">
           <img src="${heartBlackIcon}" alt="" class="btn-heart-icon" />
-          <span class="btn-text">${this.isLiked ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+          <span class="btn-text"></span>
         </button>
       </div>
     `;
+
+    const info = this.gameInfoContainer;
+    setText(info, '.game-title', gameData.name);
+    setText(info, '.rating-value', String(gameData.rating));
+    setText(info, '.game-description', gameData.fullDescription);
+    for (const key of ['genre', 'players', 'duration', 'price'] as const) {
+      setText(info, `[data-spec="${key}"]`, gameData.specs[key]);
+    }
+    this.setLikesCount(gameData.likesCount);
+    this.updateFavoriteButton();
 
     this.topRecordsContainer.innerHTML = `
       <div class="top-records-header">
         <h2 class="top-records-title">🏆 Top Records</h2>
       </div>
-      <div class="top-records-list">
-        ${gameData.topRecords
-          .map((record) => {
-            const medalEmoji = this.getMedalEmoji(record.position);
-            const formattedScore = this.formatScore(record.score);
-            const daysAgo = this.calculateDaysAgo(record.achievedAt);
-            return `
-              <div class="top-record-item">
-                <span class="medal">${medalEmoji}</span>
-                <span class="player-name">${record.playerName}</span>
-                <span class="record-score">${formattedScore}</span>
-                <span class="record-date">${daysAgo}</span>
-              </div>
-            `;
-          })
-          .join('')}
-      </div>
+      <div class="top-records-list"></div>
     `;
+    this.topRecordsContainer
+      .querySelector('.top-records-list')
+      ?.replaceChildren(
+        ...gameData.topRecords.map((record) => this.createTopRecordItem(record))
+      );
 
     const commentsSection = this.dialog.querySelector(
       '.comments-section'
@@ -339,6 +349,25 @@ class GameDetailsDialogClass {
     `;
 
     this.renderCommentsList();
+  }
+
+  private createTopRecordItem(record: TopRecord): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'top-record-item';
+
+    const fields: [string, string][] = [
+      ['medal', this.getMedalEmoji(record.position)],
+      ['player-name', record.playerName],
+      ['record-score', this.formatScore(record.score)],
+      ['record-date', this.calculateDaysAgo(record.achievedAt)],
+    ];
+    for (const [className, value] of fields) {
+      const span = document.createElement('span');
+      span.className = className;
+      span.textContent = value;
+      item.append(span);
+    }
+    return item;
   }
 
   private renderCommentsList() {
