@@ -1,0 +1,60 @@
+@use '../../styles/tokens' as *;
+
+.snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: $size-3;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: $size-2;
+  max-width: calc(100% - #{$size-2 * 2});
+  padding: $size-2 $size-2 $size-2 $size-3;
+  background-color: $bg-footer;
+  color: $white;
+  border-radius: $corner-medium;
+  font-family: $font-inter;
+  font-size: $body-small;
+  font-weight: $medium;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, $size-2);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+
+  .snackbar-message {
+    flex: 1;
+  }
+
+  .snackbar-close {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: $size-1;
+    background: transparent;
+    border: none;
+    border-radius: $corner-small;
+    color: $on-bg-footer;
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      color: $white;
+    }
+  }
+
+  &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    bottom: $size-2;
+    width: calc(100% - #{$size-2 * 2});
+  }
+}

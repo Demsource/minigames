@@ -26,6 +26,10 @@ export class Router {
   private currentPath: string | undefined;
   private globalListeners: Set<RouteListener> = new Set();
   private pageListeners: Set<RouteListener> = new Set();
+  private beforeRouteHooks: Set<() => void> = new Set();
+  // Bumped on every handled route; lets an outer dispatch notice that a
+  // listener navigated again (e.g. the Auth guard removing `auth`)
+  private routeVersion = 0;
 
   constructor(base: string = '') {
     this.base = base;
@@ -33,7 +37,9 @@ export class Router {
 
   private writeUrl(url: string, shouldReplace = false) {
     const currentUrl =
-      globalThis.location.pathname + globalThis.location.search;
+      globalThis.location.pathname +
+      globalThis.location.search +
+      globalThis.location.hash;
     if (url === currentUrl) {
       return;
     }
@@ -112,6 +118,12 @@ export class Router {
     return () => listeners.delete(listener);
   }
 
+  // Runs before every page or dialog route is handled (including popstate)
+  public onBeforeRoute(hook: () => void): () => void {
+    this.beforeRouteHooks.add(hook);
+    return () => this.beforeRouteHooks.delete(hook);
+  }
+
   public getPath(): string {
     const pathname = globalThis.location.pathname;
     return pathname.startsWith(this.base)
@@ -138,12 +150,23 @@ export class Router {
       }
     }
 
+    // Path and hash are kept; only the query changes
     const search = query.toString();
-    const url = globalThis.location.pathname + (search ? `?${search}` : '');
+    const url =
+      globalThis.location.pathname +
+      (search ? `?${search}` : '') +
+      globalThis.location.hash;
     this.writeUrl(url, options.replace);
   }
 
+  // Drops one query param in place: no reload and no extra Back entry
+  public removeQuery(key: string) {
+    this.setQuery({ [key]: undefined }, { replace: true });
+  }
+
   public handleRoute() {
+    for (const hook of this.beforeRouteHooks) hook();
+
     const relativePath = this.getPath();
     const isPathChanged = relativePath !== this.currentPath;
 
@@ -157,8 +180,17 @@ export class Router {
       query: this.getQuery(),
       pathChanged: isPathChanged,
     };
-    for (const listener of this.pageListeners) listener(change);
-    for (const listener of this.globalListeners) listener(change);
+    this.routeVersion += 1;
+    const version = this.routeVersion;
+
+    // Stop delivering this change once a listener has triggered a newer
+    // route; otherwise later listeners would act on a stale URL
+    for (const listener of [...this.pageListeners, ...this.globalListeners]) {
+      if (version !== this.routeVersion) {
+        return;
+      }
+      listener(change);
+    }
   }
 }
 

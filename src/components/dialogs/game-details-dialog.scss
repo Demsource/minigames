@@ -1,5 +1,14 @@
 @use '../../styles/_tokens' as *;
 
+// Keys must match COMMENT_AVATAR_COLOR_COUNT in game-details-dialog.ts
+$comment-avatar-colors: (
+  1: $avatar-random-1,
+  2: $avatar-random-2,
+  3: $avatar-random-3,
+  4: $avatar-random-4,
+  5: $avatar-random-5,
+);
+
 .game-details-backdrop {
   position: fixed;
   top: 0;
@@ -272,6 +281,11 @@
     font-weight: $bold;
     color: $on-primary;
     flex-shrink: 0;
+
+    &.is-guest {
+      background-color: $outline;
+      color: $on-bg-low;
+    }
   }
 
   .comment-textarea {
@@ -297,11 +311,29 @@
       border-color: $primary-high;
     }
 
+    &:disabled {
+      cursor: not-allowed;
+      border-color: $outline-variant;
+      background-color: $surface-low;
+    }
+
     &::-webkit-scrollbar {
       display: none;
     }
 
     scrollbar-width: none;
+  }
+
+  // Sending: textarea and button are disabled; show progress, not "blocked"
+  .comment-form.is-pending {
+    .comment-textarea,
+    .comment-submit-btn {
+      cursor: progress;
+    }
+
+    .submit-icon {
+      animation: comment-pending-pulse 0.8s ease-in-out infinite;
+    }
   }
 
   .comment-submit-btn {
@@ -322,6 +354,10 @@
       width: $size-5;
       height: $size-5;
       display: block;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
     }
 
     &:focus-visible {
@@ -359,6 +395,12 @@
     font-weight: $bold;
     color: $on-primary;
     flex-shrink: 0;
+
+    @each $variant, $color in $comment-avatar-colors {
+      &--color-#{$variant} {
+        background-color: $color;
+      }
+    }
   }
 
   .comment-content {
@@ -414,6 +456,15 @@
       height: 16px;
       filter: invert(0%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0.2);
       transition: filter 0.2s ease;
+    }
+
+    &.is-pending {
+      cursor: progress;
+      opacity: 0.6;
+
+      .like-icon {
+        animation: favorite-pending-pulse 0.8s ease-in-out infinite;
+      }
     }
 
     &:hover {
@@ -492,6 +543,20 @@
 
     &:hover {
       background-color: $surface;
+    }
+
+    &.is-pending {
+      cursor: progress;
+      opacity: 0.7;
+
+      &:hover {
+        background-color: $white;
+      }
+
+      // Also the only loading cue on mobile, where the label is hidden
+      .btn-heart-icon {
+        animation: favorite-pending-pulse 0.8s ease-in-out infinite;
+      }
     }
 
     &:focus-visible {
@@ -681,5 +746,35 @@
     .comment-text {
       font-size: $body-small;
     }
+  }
+}
+
+@keyframes favorite-pending-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes comment-pending-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-favorite.is-pending .btn-heart-icon,
+  .comment-form.is-pending .submit-icon,
+  .comment-like-btn.is-pending .like-icon {
+    animation: none;
   }
 }

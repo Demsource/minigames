@@ -1,6 +1,10 @@
 import logoUrl from '../../assets/icons/logo-minigames.svg';
 import { BurgerMenu } from './burger-menu/burger-menu';
 import { AuthDialog } from '../dialogs/auth-dialog';
+import { AppSession } from '../../services/app-session';
+import { renderProfile } from './render-profile';
+import { getSession, subscribeSession } from '../../services/session-state';
+import { logoutUser } from '../../services/session-guard';
 
 export function Header(currentRoute: string): HTMLElement {
   const headerElement = document.createElement('header');
@@ -25,7 +29,12 @@ export function Header(currentRoute: string): HTMLElement {
       <div class="header-auth">
         <button type="button" class="btn-login" id="login-btn">Log In</button>
         <button type="button" class="btn-signup" id="signup-btn">Sign Up</button>
-        
+        <button type="button" class="btn-signup btn-logout" id="logout-btn" hidden>Logout</button>
+        <div class="header-profile" hidden>
+          <span class="header-profile-name"></span>
+          <span class="header-profile-avatar"></span>
+        </div>
+
         <button type="button" class="burger-toggle" aria-label="Open menu">
           <span></span>
           <span></span>
@@ -35,9 +44,47 @@ export function Header(currentRoute: string): HTMLElement {
     </div>
   `;
 
-  // Placeholder event listener for the Auth dialog
-  const loginButton = headerElement.querySelector('#login-btn');
-  const signupButton = headerElement.querySelector('#signup-btn');
+  const loginButton =
+    headerElement.querySelector<HTMLButtonElement>('#login-btn');
+  const signupButton =
+    headerElement.querySelector<HTMLButtonElement>('#signup-btn');
+  const logoutButton =
+    headerElement.querySelector<HTMLButtonElement>('#logout-btn');
+  const profile = headerElement.querySelector<HTMLElement>('.header-profile');
+
+  const applyAuthState = (session: AppSession | undefined) => {
+    const isSignedIn = session !== undefined;
+    for (const button of [loginButton, signupButton]) {
+      if (button) {
+        button.hidden = isSignedIn;
+      }
+    }
+    if (logoutButton) {
+      logoutButton.hidden = !isSignedIn;
+    }
+    if (!profile) {
+      return;
+    }
+
+    profile.hidden = !isSignedIn;
+    if (session) {
+      renderProfile(profile, session, 'header-profile', 'medium');
+    }
+  };
+  applyAuthState(getSession());
+
+  // The header is re-created on every page render; drop stale listeners
+  const unsubscribe = subscribeSession((session) => {
+    if (!headerElement.isConnected) {
+      unsubscribe();
+      return;
+    }
+    applyAuthState(session);
+  });
+
+  logoutButton?.addEventListener('click', () => {
+    void logoutUser();
+  });
 
   loginButton?.addEventListener('click', (event) => {
     event.preventDefault();

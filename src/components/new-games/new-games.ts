@@ -35,26 +35,50 @@ function transformApiGameToCardData(game: Game): GameData {
   };
 }
 
-function createGameCard(game: GameData, index: number): string {
-  const wideClass = index === 2 ? ' game-card-wide' : '';
-  return `
-    <div class="game-card${wideClass}" data-game-slug="${game.slug}">
-      <img src="${game.image}" alt="${game.title}" class="game-image" />
-      <div class="game-info-overlay">
-        <h3 class="game-title" title="${game.title}">${game.title}</h3>
-        <div class="game-stats">
-          <div class="stat-item rating">
-            <img src="${starIcon}" alt="Star" />
-            <span>${game.rating}</span>
-          </div>
-          <div class="stat-item likes">
-            <img src="${heartIcon}" alt="Heart" />
-            <span>${game.likes}</span>
-          </div>
+// Static markup only; API values are set as text or element properties
+function createGameCard(game: GameData, index: number): HTMLElement {
+  const card = document.createElement('div');
+  card.className = index === 2 ? 'game-card game-card-wide' : 'game-card';
+  card.dataset.gameSlug = game.slug;
+
+  card.innerHTML = `
+    <img class="game-image" />
+    <div class="game-info-overlay">
+      <h3 class="game-title"></h3>
+      <div class="game-stats">
+        <div class="stat-item rating">
+          <img src="${starIcon}" alt="Star" />
+          <span class="stat-value"></span>
+        </div>
+        <div class="stat-item likes">
+          <img src="${heartIcon}" alt="Heart" />
+          <span class="stat-value"></span>
         </div>
       </div>
     </div>
   `;
+
+  const image = card.querySelector<HTMLImageElement>('.game-image');
+  if (image) {
+    image.src = game.image;
+    image.alt = game.title;
+  }
+
+  const title = card.querySelector<HTMLElement>('.game-title');
+  if (title) {
+    title.textContent = game.title;
+    title.title = game.title;
+  }
+
+  const [rating, likes] = card.querySelectorAll('.stat-value');
+  if (rating) {
+    rating.textContent = game.rating;
+  }
+  if (likes) {
+    likes.textContent = game.likes;
+  }
+
+  return card;
 }
 
 class CarouselSlider {
@@ -468,11 +492,9 @@ export function NewGames(): HTMLElement {
         return;
       }
 
-      const cardsHtml = games
-        .map((game, index) => createGameCard(game, index))
-        .join('');
-
-      track.innerHTML = cardsHtml;
+      track.replaceChildren(
+        ...games.map((game, index) => createGameCard(game, index))
+      );
 
       slider = new CarouselSlider(track);
 
@@ -502,8 +524,8 @@ export function NewGames(): HTMLElement {
           GameDetailsDialog.show(gameSlug);
         });
       }
-    } catch (error) {
-      console.error('Failed to load featured games:', error);
+    } catch {
+      // Shown to the user as the error banner with Retry
       track.replaceChildren(
         ErrorBanner({
           message: 'Failed to load featured games. Please try again.',
