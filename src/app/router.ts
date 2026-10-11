@@ -27,6 +27,9 @@ export class Router {
   private globalListeners: Set<RouteListener> = new Set();
   private pageListeners: Set<RouteListener> = new Set();
   private beforeRouteHooks: Set<() => void> = new Set();
+  // Bumped on every handled route; lets an outer dispatch notice that a
+  // listener navigated again (e.g. the Auth guard removing `auth`)
+  private routeVersion = 0;
 
   constructor(base: string = '') {
     this.base = base;
@@ -177,8 +180,17 @@ export class Router {
       query: this.getQuery(),
       pathChanged: isPathChanged,
     };
-    for (const listener of this.pageListeners) listener(change);
-    for (const listener of this.globalListeners) listener(change);
+    this.routeVersion += 1;
+    const version = this.routeVersion;
+
+    // Stop delivering this change once a listener has triggered a newer
+    // route; otherwise later listeners would act on a stale URL
+    for (const listener of [...this.pageListeners, ...this.globalListeners]) {
+      if (version !== this.routeVersion) {
+        return;
+      }
+      listener(change);
+    }
   }
 }
 
