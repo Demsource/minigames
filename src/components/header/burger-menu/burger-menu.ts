@@ -4,11 +4,8 @@ import closeUrl from '../../../assets/icons/close.svg';
 import { AuthDialog } from '../../dialogs/auth-dialog';
 import { AppSession } from '../../../services/app-session';
 import { renderProfile } from '../render-profile';
-import {
-  endSession,
-  getSession,
-  subscribeSession,
-} from '../../../services/session-state';
+import { getSession, subscribeSession } from '../../../services/session-state';
+import { logoutUser } from '../../../services/session-guard';
 
 export class BurgerMenu {
   private element: HTMLElement;
@@ -114,7 +111,7 @@ export class BurgerMenu {
     const logoutButton = this.element.querySelector('#burger-logout-btn');
     logoutButton?.addEventListener('click', () => {
       this.close();
-      void endSession();
+      void logoutUser();
     });
 
     // Close when clicking a nav link

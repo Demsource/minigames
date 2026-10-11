@@ -5,7 +5,7 @@ import {
   readSession,
   saveSession,
 } from './app-session';
-import { logout } from './auth';
+import { AuthResult, logout } from './auth';
 
 type SessionListener = (session: AppSession | undefined) => void;
 
@@ -46,18 +46,24 @@ export function restoreSession(session: AppSession): void {
 }
 
 // Clears the app session and signs out of Firebase so its persisted
-// identity can't restore the user after the app session has ended
-export async function endSession(): Promise<void> {
+// identity can't restore the user after the app session has ended.
+// The app is in Guest Mode before signOut runs, so a failed signOut
+// (reported in the result) never restores the authenticated UI.
+export async function endSession(): Promise<AuthResult> {
   clearSession();
   const wasAuthenticated = state.session !== undefined;
   state.session = undefined;
   if (wasAuthenticated) {
     notify();
   }
-  await logout();
+  return logout();
 }
 
-export type SessionInitResult = 'restored' | 'guest' | 'expired' | 'invalid';
+export interface SessionInitResult {
+  status: 'restored' | 'guest' | 'expired' | 'invalid';
+  // Result of the Firebase signOut run when no usable session exists
+  signOut: AuthResult;
+}
 
 // Runs once on startup. Only a valid, unexpired stored session restores the
 // authenticated UI; Firebase's persisted currentUser alone never does.
@@ -66,16 +72,20 @@ export async function initSession(): Promise<SessionInitResult> {
 
   if (result.status === 'valid') {
     restoreSession(result.session);
-    return 'restored';
+    return { status: 'restored', signOut: { success: true } };
   }
 
   // No usable app session: also sign out of Firebase so its persisted
-  // identity is dropped. Errors are swallowed so startup never crashes.
+  // identity is dropped. Errors never crash startup; Guest Mode continues.
+  let signOut: AuthResult;
   try {
-    await endSession();
+    signOut = await endSession();
   } catch {
-    // Guest Mode continues regardless.
+    signOut = { success: false };
   }
 
-  return result.status === 'none' ? 'guest' : result.status;
+  return {
+    status: result.status === 'none' ? 'guest' : result.status,
+    signOut,
+  };
 }

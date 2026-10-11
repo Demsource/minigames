@@ -6,6 +6,7 @@ import { NotFound } from './pages/not-found/not-found-page';
 import { initSession } from './services/session-state';
 import {
   SESSION_EXPIRED_MESSAGE,
+  SIGN_OUT_ERROR_MESSAGE,
   startSessionWatch,
 } from './services/session-guard';
 import { showSnackbar } from './components/snackbar/snackbar';
@@ -15,8 +16,10 @@ const appContainer = document.querySelector<HTMLElement>('#app');
 if (appContainer) {
   // Restores a valid session synchronously; only the Firebase signOut for
   // missing/invalid/expired data runs in the background
-  void initSession().then((result) => {
-    if (result === 'expired') {
+  void initSession().then(({ status, signOut }) => {
+    if (!signOut.success) {
+      showSnackbar(SIGN_OUT_ERROR_MESSAGE);
+    } else if (status === 'expired') {
       showSnackbar(SESSION_EXPIRED_MESSAGE);
     }
   });
