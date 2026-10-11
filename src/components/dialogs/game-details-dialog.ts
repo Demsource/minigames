@@ -10,8 +10,10 @@ import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-dis
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import {
   apiCall,
+  ApiError,
+  getGameDetails,
+  toggleGameFavorite,
   GameDetails,
-  GameDetailsResponse,
   Comment,
   CommentsResponse,
 } from '../../services/api';
@@ -20,8 +22,33 @@ import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loa
 import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
+import { showSnackbar } from '../snackbar/snackbar';
 import { canPerformProtectedAction } from '../../services/session-guard';
-import { subscribeSession } from '../../services/session-state';
+import { getSession, subscribeSession } from '../../services/session-state';
+
+const FAVORITES_LOGIN_REQUIRED_MESSAGE =
+  'Please log in to add games to your favorites.';
+
+function getFavoriteErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    // Network failure or timeout: the outcome is unknown, so don't retry
+    return "Couldn't confirm the favorite change. Please check and try again.";
+  }
+  switch (error.status) {
+    case 401: {
+      return 'Please log in to manage your favorites.';
+    }
+    case 404: {
+      return 'This game could not be found.';
+    }
+    case 429: {
+      return error.message;
+    }
+    default: {
+      return "Couldn't update favorites. Please try again.";
+    }
+  }
+}
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -39,17 +66,16 @@ class GameDetailsDialogClass {
   private hasSeenUrlWithoutGame: boolean = false;
   // Hidden behind the Auth dialog with its content and state preserved
   private isSuspended: boolean = false;
+  // Slug of the game whose favorite POST is in flight; that game's button
+  // stays locked until it settles, other games are unaffected
+  private favoritePendingSlug: string | undefined;
 
   constructor() {
     this.createDOM();
     this.attachEvents();
-    // Logout or expiry: switch any open Game Details to its Guest state.
-    // Later, refresh user-specific data from the API here.
-    subscribeSession((session) => {
-      if (!session) {
-        this.resetToGuestState();
-      }
-    });
+    // Sign-in: load the user's favorite state. Logout or expiry: switch any
+    // open Game Details to its Guest state.
+    subscribeSession(() => this.syncFavoriteWithSession());
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
     router.subscribe(({ query }) => {
@@ -209,7 +235,7 @@ class GameDetailsDialogClass {
           </div>
           <div class="likes">
             <img src="${heartIcon}" alt="" class="meta-icon" />
-            <span>${formattedLikes}</span>
+            <span class="likes-count">${formattedLikes}</span>
           </div>
         </div>
       </div>
@@ -282,6 +308,9 @@ class GameDetailsDialogClass {
         onRetry: async () => {
           await this.loadComments();
           this.renderGameContent(this.currentGameData!);
+          // Re-render replaced the buttons: re-bind and restore their state
+          this.attachGameActionEvents();
+          this.updateFavoriteButton();
         },
         isDismissible: true,
       });
@@ -354,7 +383,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
     favoriteButton?.addEventListener('click', () => {
-      this.toggleFavorite(favoriteButton);
+      void this.toggleFavorite();
     });
 
     const textarea =
@@ -471,18 +500,48 @@ class GameDetailsDialogClass {
     return diffYears === 1 ? '1 year ago' : `${diffYears} years ago`;
   }
 
-  private toggleFavorite(button: HTMLButtonElement) {
-    if (!canPerformProtectedAction()) {
+  // One POST flips the favorite; the UI changes only from the server's
+  // response. Never retried: a second POST could undo the first.
+  private async toggleFavorite() {
+    if (this.isFavoritePending()) {
       return;
     }
 
-    this.isLiked = !this.isLiked;
-    button.classList.toggle('is-favorited');
-    const textSpan = button.querySelector('.btn-text');
-    if (textSpan) {
-      textSpan.textContent = this.isLiked
-        ? 'Remove from Favorites'
-        : 'Add to Favorites';
+    const wasGuest = !getSession();
+    if (!canPerformProtectedAction()) {
+      // Expiry shows its own Snackbar; a guest gets the warning
+      if (wasGuest) {
+        showSnackbar(FAVORITES_LOGIN_REQUIRED_MESSAGE);
+      }
+      return;
+    }
+
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+    if (!email) {
+      return;
+    }
+
+    this.favoritePendingSlug = slug;
+    this.updateFavoriteButton();
+    try {
+      const { data } = await toggleGameFavorite(slug, email);
+      // Game or user changed meanwhile: this result is not for this view
+      if (slug !== this.currentGameSlug || getSession()?.email !== email) {
+        return;
+      }
+      if (this.currentGameData) {
+        this.currentGameData.isLikedByCurrentUser = data.isFavorited;
+        this.currentGameData.likesCount = data.likesCount;
+      }
+      this.setFavoriteView(data.isFavorited);
+      this.setLikesCount(data.likesCount);
+    } catch (error) {
+      showSnackbar(getFavoriteErrorMessage(error));
+    } finally {
+      this.favoritePendingSlug = undefined;
+      // Unlock; on error this restores the confirmed (unchanged) label
+      this.updateFavoriteButton();
     }
   }
 
@@ -543,6 +602,45 @@ class GameDetailsDialogClass {
     this.setFavoriteView(this.currentGameData.isLikedByCurrentUser);
   }
 
+  private syncFavoriteWithSession() {
+    if (getSession()) {
+      void this.refreshFavoriteState();
+    } else {
+      this.resetToGuestState();
+    }
+  }
+
+  // Re-requests the personalized details for the loaded game (e.g. after
+  // signing in through the Auth handoff) and applies the server's state
+  private async refreshFavoriteState() {
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+    if (!email || !this.currentGameData) {
+      return;
+    }
+
+    try {
+      const { data } = await getGameDetails(slug, email);
+      // Ignore if the game or the session changed while waiting
+      if (slug !== this.currentGameSlug || getSession()?.email !== email) {
+        return;
+      }
+      this.currentGameData = data;
+      this.setFavoriteView(data.isLikedByCurrentUser);
+      this.setLikesCount(data.likesCount);
+    } catch {
+      // Keep the current view; the next open loads fresh state
+    }
+  }
+
+  private setLikesCount(count: number) {
+    const likesCount =
+      this.gameInfoContainer.querySelector<HTMLElement>('.likes-count');
+    if (likesCount) {
+      likesCount.textContent = this.formatLikesCount(count);
+    }
+  }
+
   // Guest Mode after logout or expiry: drop user-specific favorite and
   // like state but keep the public content (and any comment draft) open
   private resetToGuestState() {
@@ -552,16 +650,36 @@ class GameDetailsDialogClass {
 
   private setFavoriteView(isFavorited: boolean) {
     this.isLiked = isFavorited;
+    this.updateFavoriteButton();
+  }
+
+  // Locked only for the game whose request is in flight
+  private isFavoritePending(): boolean {
+    return this.favoritePendingSlug === this.currentGameSlug;
+  }
+
+  // Renders favorite and pending state onto the current button
+  private updateFavoriteButton() {
     const favoriteButton =
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
-
     if (!favoriteButton) {
       return;
     }
 
+    const isPending = this.isFavoritePending();
     favoriteButton.classList.toggle('is-favorited', this.isLiked);
+    favoriteButton.classList.toggle('is-pending', isPending);
+    favoriteButton.disabled = isPending;
+    favoriteButton.setAttribute('aria-busy', String(isPending));
+    favoriteButton.setAttribute('aria-pressed', String(this.isLiked));
+
     const textSpan = favoriteButton.querySelector('.btn-text');
-    if (textSpan) {
+    if (!textSpan) {
+      return;
+    }
+    if (isPending) {
+      textSpan.textContent = 'Saving…';
+    } else {
       textSpan.textContent = this.isLiked
         ? 'Remove from Favorites'
         : 'Add to Favorites';
@@ -611,7 +729,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
     favoriteButton?.addEventListener('click', () => {
-      this.toggleFavorite(favoriteButton);
+      void this.toggleFavorite();
     });
 
     const commentLikeButtons =
@@ -689,8 +807,8 @@ class GameDetailsDialogClass {
       this.currentCommentsData = response.data;
       this.totalCommentsCount = response.meta.totalComments;
       this.commentsLoadFailed = false;
-    } catch (error) {
-      console.error('Failed to load comments:', error);
+    } catch {
+      // Shown to the user as the comments error banner with Retry
       this.currentCommentsData = [];
       this.totalCommentsCount = 0;
       this.commentsLoadFailed = true;
@@ -698,32 +816,30 @@ class GameDetailsDialogClass {
   }
 
   private async loadGameData() {
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+
     try {
+      // Personalized for signed-in users: isLikedByCurrentUser is theirs
       const [gameResponse] = await Promise.all([
-        apiCall<GameDetailsResponse>(`/api/games/${this.currentGameSlug}`),
+        getGameDetails(slug, email),
         this.loadComments(),
       ]);
+      // Another game was opened while this one was loading
+      if (slug !== this.currentGameSlug) {
+        return;
+      }
       this.renderGameContent(gameResponse.data);
+      this.attachGameActionEvents();
+      this.resetFavoriteState();
+      this.resetCommentState();
 
-      try {
-        this.attachGameActionEvents();
-      } catch (error) {
-        console.error('Error attaching game action events:', error);
+      // Signed in or out while loading: the personal state is outdated
+      if (getSession()?.email !== email) {
+        this.syncFavoriteWithSession();
       }
-
-      try {
-        this.resetFavoriteState();
-      } catch (error) {
-        console.error('Error resetting favorite state:', error);
-      }
-
-      try {
-        this.resetCommentState();
-      } catch (error) {
-        console.error('Error resetting comment state:', error);
-      }
-    } catch (error) {
-      console.error('Failed to load game details:', error);
+    } catch {
+      // Shown to the user as the dialog error state
       this.showError();
     }
   }
@@ -738,8 +854,8 @@ class GameDetailsDialogClass {
   }
 
   public async open() {
+    // Only reachable through syncWithUrl, which always sets the slug first
     if (!this.currentGameSlug) {
-      console.error('Game slug not set');
       return;
     }
 

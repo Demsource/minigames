@@ -86,13 +86,79 @@ export interface CommentsResponse {
   };
 }
 
+export interface FavoriteToggle {
+  gameSlug: string;
+  isFavorited: boolean;
+  likesCount: number;
+}
+
+export interface FavoriteToggleResponse {
+  data: FavoriteToggle;
+}
+
+// Carries the HTTP status and the backend's `{ error }` message
+export class ApiError extends Error {
+  public readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+async function readErrorMessage(response: Response): Promise<string> {
+  try {
+    const body: unknown = await response.json();
+    if (
+      typeof body === 'object' &&
+      body !== null &&
+      'error' in body &&
+      typeof body.error === 'string'
+    ) {
+      return body.error;
+    }
+  } catch {
+    // Non-JSON error body: fall back to the status text below
+  }
+  return `API request failed: ${response.status} ${response.statusText}`;
+}
+
 export async function apiCall<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, options);
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+    throw new ApiError(response.status, await readErrorMessage(response));
   }
   return response.json();
+}
+
+// Personalized when userEmail is given: data.isLikedByCurrentUser then
+// reflects whether that user has favorited the game
+export function getGameDetails(
+  gameSlug: string,
+  userEmail?: string
+): Promise<GameDetailsResponse> {
+  const query = userEmail ? `?userEmail=${encodeURIComponent(userEmail)}` : '';
+  return apiCall<GameDetailsResponse>(
+    `/api/games/${encodeURIComponent(gameSlug)}${query}`
+  );
+}
+
+// Toggles the favorite: every successful call flips the state, so never
+// retry a call whose outcome is unknown
+export function toggleGameFavorite(
+  gameSlug: string,
+  userEmail: string
+): Promise<FavoriteToggleResponse> {
+  return apiCall<FavoriteToggleResponse>(
+    `/api/games/${encodeURIComponent(gameSlug)}/favorite`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userEmail }),
+    }
+  );
 }
