@@ -38,38 +38,94 @@ function getInitials(name: string): string {
     : name.slice(0, 2).toUpperCase();
 }
 
-function createLeaderboardRows(players: LeaderboardPlayer[]): string {
-  return players
-    .map(
-      (player) => `
-    <div class="lb-row lb-data rank-${player.rank}">
-      <div class="lb-cell cell-rank ${player.rank === 1 ? 'top-1' : ''} ${player.rank === 2 ? 'top-2' : ''} ${player.rank === 3 ? 'top-3' : ''}">
-        <span class="desktop-val">#${player.rank}</span>
-        <span class="tablet-val">#${player.rank}</span>
-        <span class="mobile-val">#${player.rank}</span>
-      </div>
-      <div class="lb-cell cell-player">
-        <div class="player-avatar bg-${player.rank}">${getInitials(player.playerName)}</div>
-        <span class="player-name">${player.playerName}</span>
-      </div>
-      <div class="lb-cell col-games">${player.gamesPlayed}</div>
-      <div class="lb-cell cell-score">
-        <span class="desktop-val">${formatScoreDesktop(player.totalScore)}</span>
-        <span class="tablet-val">${formatScoreDesktop(player.totalScore)}</span>
-        <span class="mobile-val">${formatScoreMobile(player.totalScore)}</span>
-      </div>
-      <div class="lb-cell cell-streak">
-        🔥 <span class="desktop-val">${player.streakDays} days</span>
-        <span class="tablet-val">${player.streakDays}d</span>
-        <span class="mobile-val">${player.streakDays}d</span>
-      </div>
-      <div class="lb-cell col-favorite cell-favorite">
-        <span class="pill">${player.favoriteGameName}</span>
-      </div>
-    </div>
-  `
+// Creates an element whose content is set as text, never parsed as HTML
+function createElement(
+  tag: string,
+  className: string,
+  text?: string
+): HTMLElement {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+// Desktop / tablet / mobile variants of one value
+function createResponsiveValues(
+  desktop: string,
+  tablet: string,
+  mobile: string
+): HTMLElement[] {
+  return [
+    createElement('span', 'desktop-val', desktop),
+    createElement('span', 'tablet-val', tablet),
+    createElement('span', 'mobile-val', mobile),
+  ];
+}
+
+function createLeaderboardRow(player: LeaderboardPlayer): HTMLElement {
+  const { rank } = player;
+  const row = createElement('div', `lb-row lb-data rank-${rank}`);
+
+  const rankCell = createElement('div', 'lb-cell cell-rank');
+  if (rank >= 1 && rank <= 3) {
+    rankCell.classList.add(`top-${rank}`);
+  }
+  rankCell.append(
+    ...createResponsiveValues(`#${rank}`, `#${rank}`, `#${rank}`)
+  );
+
+  const playerCell = createElement('div', 'lb-cell cell-player');
+  playerCell.append(
+    createElement(
+      'div',
+      `player-avatar bg-${rank}`,
+      getInitials(player.playerName)
+    ),
+    createElement('span', 'player-name', player.playerName)
+  );
+
+  const gamesCell = createElement(
+    'div',
+    'lb-cell col-games',
+    String(player.gamesPlayed)
+  );
+
+  const scoreCell = createElement('div', 'lb-cell cell-score');
+  scoreCell.append(
+    ...createResponsiveValues(
+      formatScoreDesktop(player.totalScore),
+      formatScoreDesktop(player.totalScore),
+      formatScoreMobile(player.totalScore)
     )
-    .join('');
+  );
+
+  const streakCell = createElement('div', 'lb-cell cell-streak', '🔥 ');
+  streakCell.append(
+    ...createResponsiveValues(
+      `${player.streakDays} days`,
+      `${player.streakDays}d`,
+      `${player.streakDays}d`
+    )
+  );
+
+  const favoriteCell = createElement(
+    'div',
+    'lb-cell col-favorite cell-favorite'
+  );
+  favoriteCell.append(createElement('span', 'pill', player.favoriteGameName));
+
+  row.append(
+    rankCell,
+    playerCell,
+    gamesCell,
+    scoreCell,
+    streakCell,
+    favoriteCell
+  );
+  return row;
 }
 
 export function Leaderboard(): HTMLElement {
@@ -129,12 +185,13 @@ export function Leaderboard(): HTMLElement {
         return;
       }
 
-      const rowsHtml = createLeaderboardRows(response.data);
-      headerRow.insertAdjacentHTML('afterend', rowsHtml);
+      headerRow.after(
+        ...response.data.map((player) => createLeaderboardRow(player))
+      );
 
       skeletonContainer.remove();
-    } catch (error) {
-      console.error('Failed to load leaderboard:', error);
+    } catch {
+      // Shown to the user as the error banner with Retry
       skeletonContainer.replaceWith(
         ErrorBanner({
           message: 'Failed to load leaderboard. Please try again.',

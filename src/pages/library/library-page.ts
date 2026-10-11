@@ -126,9 +126,9 @@ export function Library(currentRoute: string): HTMLElement {
       if (gridElement) {
         contentContainer.replaceChildren(gridElement);
       }
-    } catch (error) {
+    } catch {
       if (requestId !== latestRequestId) return;
-      console.error('Failed to load games:', error);
+      // Shown to the user as the error banner with Retry
       contentContainer.replaceChildren(
         ErrorBanner({
           message: 'Failed to load games. Please try again.',
@@ -240,8 +240,8 @@ export function Library(currentRoute: string): HTMLElement {
       );
 
       loadGames();
-    } catch (error) {
-      console.error('Failed to load categories:', error);
+    } catch {
+      // Falls back to the filter bar without categories
       filterSortBarContainer.append(
         FilterSortBar({
           categories: [],
