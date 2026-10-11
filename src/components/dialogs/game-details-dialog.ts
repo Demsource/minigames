@@ -131,9 +131,12 @@ class GameDetailsDialogClass {
     this.attachEvents();
     // Sign-in: load the user's favorite state. Logout or expiry: switch any
     // open Game Details to its Guest state.
-    subscribeSession(() => {
+    subscribeSession((session) => {
       this.syncFavoriteWithSession();
       this.updateCommentFormAccess();
+      if (session) {
+        void this.refreshCommentsForSession();
+      }
     });
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
@@ -799,7 +802,7 @@ class GameDetailsDialogClass {
   // like state but keep the public content (and any comment draft) open
   private resetToGuestState() {
     this.setFavoriteView(false);
-    this.resetCommentLikes();
+    this.resetCommentLikes(true);
   }
 
   private setFavoriteView(isFavorited: boolean) {
@@ -1018,7 +1021,9 @@ class GameDetailsDialogClass {
   }
 
   // Un-likes every comment and restores the loaded like counts
-  private resetCommentLikes() {
+  // Applies each comment's server state (isLikedByCurrentUser, likesCount)
+  // to its button. Guest view: nothing is shown as liked.
+  private resetCommentLikes(isGuestView = false) {
     const commentLikeButtons =
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
 
@@ -1028,11 +1033,31 @@ class GameDetailsDialogClass {
       const commentData = this.currentCommentsData.find(
         (c) => c.commentId === commentId
       );
+      if (!commentData) {
+        continue;
+      }
 
-      button.classList.remove('is-liked');
-      if (likeCount && commentData) {
+      button.classList.toggle(
+        'is-liked',
+        !isGuestView && commentData.isLikedByCurrentUser
+      );
+      if (likeCount) {
         likeCount.textContent = commentData.likesCount.toString();
       }
+    }
+  }
+
+  // Sign-in while Game Details is open: reload comments with the user's
+  // email so each like button reflects their own isLikedByCurrentUser
+  private async refreshCommentsForSession() {
+    const email = getSession()?.email;
+    if (!email || !this.currentGameData || this.commentsLoadFailed) {
+      return;
+    }
+    try {
+      await this.refreshComments(this.currentGameSlug, email);
+    } catch {
+      // Keep the current list; the next open loads personalized data
     }
   }
 
