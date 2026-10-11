@@ -5,7 +5,7 @@ import {
   readSession,
   saveSession,
 } from './app-session';
-import { logout } from './auth';
+import { AuthResult, logout } from './auth';
 
 type SessionListener = (session: AppSession | undefined) => void;
 
@@ -46,15 +46,17 @@ export function restoreSession(session: AppSession): void {
 }
 
 // Clears the app session and signs out of Firebase so its persisted
-// identity can't restore the user after the app session has ended
-export async function endSession(): Promise<void> {
+// identity can't restore the user after the app session has ended.
+// The app is in Guest Mode before signOut runs, so a failed signOut
+// (reported in the result) never restores the authenticated UI.
+export async function endSession(): Promise<AuthResult> {
   clearSession();
   const wasAuthenticated = state.session !== undefined;
   state.session = undefined;
   if (wasAuthenticated) {
     notify();
   }
-  await logout();
+  return logout();
 }
 
 export type SessionInitResult = 'restored' | 'guest' | 'expired' | 'invalid';

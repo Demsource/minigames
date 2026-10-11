@@ -5,6 +5,20 @@ import { endSession, getSession, subscribeSession } from './session-state';
 
 export const SESSION_EXPIRED_MESSAGE =
   'Your session has expired. You are now in Guest Mode.';
+export const LOGOUT_SUCCESS_MESSAGE = 'You have been logged out.';
+export const SIGN_OUT_ERROR_MESSAGE =
+  'You are in Guest Mode, but sign-out could not be completed. Please try again later.';
+
+// Shows the error if Firebase signOut failed; the app stays in Guest Mode
+async function endSessionWithFeedback(successMessage: string): Promise<void> {
+  const result = await endSession();
+  showSnackbar(result.success ? successMessage : SIGN_OUT_ERROR_MESSAGE);
+}
+
+// Logout from the header or mobile menu: same Guest Mode reset as expiry
+export async function logoutUser(): Promise<void> {
+  await endSessionWithFeedback(LOGOUT_SUCCESS_MESSAGE);
+}
 
 // Ends an expired session and switches to Guest Mode. Returns whether an
 // authenticated session is still active. endSession() clears the in-memory
@@ -18,8 +32,7 @@ export function isSessionActive(): boolean {
     return true;
   }
 
-  void endSession();
-  showSnackbar(SESSION_EXPIRED_MESSAGE);
+  void endSessionWithFeedback(SESSION_EXPIRED_MESSAGE);
   return false;
 }
 

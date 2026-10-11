@@ -3,11 +3,8 @@ import { BurgerMenu } from './burger-menu/burger-menu';
 import { AuthDialog } from '../dialogs/auth-dialog';
 import { AppSession } from '../../services/app-session';
 import { renderProfile } from './render-profile';
-import {
-  endSession,
-  getSession,
-  subscribeSession,
-} from '../../services/session-state';
+import { getSession, subscribeSession } from '../../services/session-state';
+import { logoutUser } from '../../services/session-guard';
 
 export function Header(currentRoute: string): HTMLElement {
   const headerElement = document.createElement('header');
@@ -86,7 +83,7 @@ export function Header(currentRoute: string): HTMLElement {
   });
 
   logoutButton?.addEventListener('click', () => {
-    void endSession();
+    void logoutUser();
   });
 
   loginButton?.addEventListener('click', (event) => {
