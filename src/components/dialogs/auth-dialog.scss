@@ -104,6 +104,20 @@
       margin-bottom: $size-2;
     }
 
+    .error-message {
+      font-size: 12px;
+      color: #dc2626;
+      margin-top: $size-1;
+      min-height: 16px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-weight: 500;
+
+      &.is-visible {
+        opacity: 1;
+      }
+    }
+
     .input-wrapper {
       position: relative;
       display: flex;
@@ -140,6 +154,10 @@
 
         &::placeholder {
           color: $on-bg-low;
+        }
+
+        &.has-error {
+          border-color: #dc2626;
         }
       }
     }

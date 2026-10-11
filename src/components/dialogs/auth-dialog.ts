@@ -5,6 +5,13 @@ import mailIcon from '../../assets/icons/mail.svg';
 import personIcon from '../../assets/icons/person.svg';
 import visibilityIcon from '../../assets/icons/visibility.svg';
 import { router } from '../../app/router';
+import {
+  validateEmail,
+  validateUsername,
+  validateRegistrationPassword,
+  validateLoginPassword,
+  validateConfirmPassword,
+} from './validation';
 
 export type AuthMode = 'login' | 'register';
 
@@ -74,6 +81,100 @@ class AuthDialogClass {
       ?.classList.toggle('active', isRegister);
   }
 
+  private getFieldInput(fieldName: string): HTMLInputElement | null {
+    return this.dialog.querySelector(
+      `input[data-field="${CSS.escape(fieldName)}"]`
+    );
+  }
+
+  private getErrorElement(fieldName: string): HTMLElement | null {
+    return this.dialog.querySelector(
+      `[data-error-for="${CSS.escape(fieldName)}"]`
+    );
+  }
+
+  private showError(fieldName: string, errorMessage: string) {
+    const input = this.getFieldInput(fieldName);
+    const errorElement = this.getErrorElement(fieldName);
+
+    if (input) {
+      input.classList.add('has-error');
+    }
+
+    if (!errorElement) {
+      return;
+    }
+
+    errorElement.textContent = errorMessage;
+    errorElement.classList.add('is-visible');
+  }
+
+  private clearError(fieldName: string) {
+    const input = this.getFieldInput(fieldName);
+    const errorElement = this.getErrorElement(fieldName);
+
+    if (input) {
+      input.classList.remove('has-error');
+    }
+
+    if (!errorElement) {
+      return;
+    }
+
+    errorElement.textContent = '';
+    errorElement.classList.remove('is-visible');
+  }
+
+  private validateField(fieldName: string) {
+    const input = this.getFieldInput(fieldName);
+    if (!input) return;
+
+    const value = input.value;
+    let validationResult;
+
+    switch (fieldName) {
+      case 'login-email':
+      case 'register-email': {
+        validationResult = validateEmail(value);
+        break;
+      }
+
+      case 'register-username': {
+        validationResult = validateUsername(value);
+        break;
+      }
+
+      case 'register-password': {
+        validationResult = validateRegistrationPassword(value);
+        // Revalidate confirm password when password changes
+        this.validateField('register-confirm-password');
+        break;
+      }
+
+      case 'register-confirm-password': {
+        const passwordInput = this.getFieldInput('register-password');
+        const passwordValue = passwordInput?.value ?? '';
+        validationResult = validateConfirmPassword(passwordValue, value);
+        break;
+      }
+
+      case 'login-password': {
+        validationResult = validateLoginPassword(value);
+        break;
+      }
+
+      default: {
+        return;
+      }
+    }
+
+    if (validationResult.isValid) {
+      this.clearError(fieldName);
+    } else {
+      this.showError(fieldName, validationResult.error ?? 'Invalid field');
+    }
+  }
+
   private requestClose() {
     if (!this.isOpen()) {
       return;
@@ -102,22 +203,24 @@ class AuthDialogClass {
       <div id="login-view">
         <h2>Welcome Back!</h2>
         <p class="subtitle">Sign in to resume your games and progress.</p>
-        
+
         <div class="form-group">
           <label>Email Address</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${mailIcon}" alt="Mail" />
-            <input type="email" placeholder="e.g. alex@minigames.com" />
+            <input type="email" placeholder="e.g. alex@minigames.com" data-field="login-email" />
           </div>
+          <div class="error-message" data-error-for="login-email"></div>
         </div>
 
         <div class="form-group">
           <label>Password</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${lockIcon}" alt="Lock" />
-            <input type="password" placeholder="••••••••" />
+            <input type="password" placeholder="••••••••" data-field="login-password" />
             <img class="icon-right" src="${visibilityIcon}" alt="Visibility" />
           </div>
+          <div class="error-message" data-error-for="login-password"></div>
         </div>
 
         <a class="forgot-password">Forgot Password?</a>
@@ -137,37 +240,41 @@ class AuthDialogClass {
       <div id="register-view">
         <h2>Create Account</h2>
         <p class="subtitle">Join MiniGames to track your score & streak.</p>
-        
+
         <div class="form-group">
           <label>Username</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${personIcon}" alt="User" />
-            <input type="text" placeholder="e.g. CozyGamer_99" />
+            <input type="text" placeholder="e.g. CozyGamer_99" data-field="register-username" />
           </div>
+          <div class="error-message" data-error-for="register-username"></div>
         </div>
 
         <div class="form-group">
           <label>Email Address</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${mailIcon}" alt="Mail" />
-            <input type="email" placeholder="your.email@domain.com" />
+            <input type="email" placeholder="your.email@domain.com" data-field="register-email" />
           </div>
+          <div class="error-message" data-error-for="register-email"></div>
         </div>
 
         <div class="form-group">
           <label>Password</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${lockIcon}" alt="Lock" />
-            <input type="password" placeholder="Min. 8 characters" />
+            <input type="password" placeholder="Min. 8 characters" data-field="register-password" />
           </div>
+          <div class="error-message" data-error-for="register-password"></div>
         </div>
 
         <div class="form-group">
           <label>Confirm Password</label>
           <div class="input-wrapper">
             <img class="icon-left" src="${lockIcon}" alt="Lock" />
-            <input type="password" placeholder="Repeat your password" />
+            <input type="password" placeholder="Repeat your password" data-field="register-confirm-password" />
           </div>
+          <div class="error-message" data-error-for="register-confirm-password"></div>
         </div>
 
         <button class="btn-primary" type="button" style="margin-top: 16px;">Create Account</button>
@@ -186,6 +293,25 @@ class AuthDialogClass {
 
     this.backdrop.append(this.dialog);
     document.body.append(this.backdrop);
+  }
+
+  private attachFieldValidationListeners() {
+    const allInputs = this.dialog.querySelectorAll('input[data-field]');
+
+    for (const input of allInputs) {
+      const fieldName = (input as HTMLInputElement).dataset.field;
+      if (!fieldName) continue;
+
+      // Validate on input (real-time as user types)
+      input.addEventListener('input', () => {
+        this.validateField(fieldName);
+      });
+
+      // Validate on blur (when user leaves the field)
+      input.addEventListener('blur', () => {
+        this.validateField(fieldName);
+      });
+    }
   }
 
   private attachEvents() {
@@ -213,6 +339,8 @@ class AuthDialogClass {
         this.requestClose();
       }
     });
+
+    this.attachFieldValidationListeners();
   }
 
   // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
