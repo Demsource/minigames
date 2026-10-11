@@ -2,6 +2,12 @@ import './burger-menu.scss';
 import logoUrl from '../../../assets/icons/logo-minigames.svg';
 import closeUrl from '../../../assets/icons/close.svg';
 import { AuthDialog } from '../../dialogs/auth-dialog';
+import { AppSession } from '../../../services/app-session';
+import {
+  endSession,
+  getSession,
+  subscribeSession,
+} from '../../../services/session-state';
 
 export class BurgerMenu {
   private element: HTMLElement;
@@ -34,10 +40,36 @@ export class BurgerMenu {
       <div class="burger-auth">
         <button type="button" class="btn-login" id="burger-login-btn">Log In</button>
         <button type="button" class="btn-signup" id="burger-signup-btn">Sign Up</button>
+        <button type="button" class="btn-login btn-logout" id="burger-logout-btn" hidden>Logout</button>
       </div>
     `;
 
     this.bindEvents();
+    this.applyAuthState(getSession());
+
+    // A new menu is created on every page render; drop stale listeners
+    const unsubscribe = subscribeSession((session) => {
+      if (!this.element.isConnected) {
+        unsubscribe();
+        return;
+      }
+      this.applyAuthState(session);
+    });
+  }
+
+  private applyAuthState(session: AppSession | undefined) {
+    const isSignedIn = session !== undefined;
+    for (const selector of ['#burger-login-btn', '#burger-signup-btn']) {
+      const button = this.element.querySelector<HTMLButtonElement>(selector);
+      if (button) {
+        button.hidden = isSignedIn;
+      }
+    }
+    const logoutButton =
+      this.element.querySelector<HTMLButtonElement>('#burger-logout-btn');
+    if (logoutButton) {
+      logoutButton.hidden = !isSignedIn;
+    }
   }
 
   private bindEvents() {
@@ -63,6 +95,12 @@ export class BurgerMenu {
       event.preventDefault();
       this.close();
       AuthDialog.show('register');
+    });
+
+    const logoutButton = this.element.querySelector('#burger-logout-btn');
+    logoutButton?.addEventListener('click', () => {
+      this.close();
+      void endSession();
     });
 
     // Close when clicking a nav link
