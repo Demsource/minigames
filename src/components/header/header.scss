@@ -110,6 +110,37 @@
       }
     }
 
+    .header-profile {
+      display: flex;
+      align-items: center;
+      gap: $size-1;
+      min-width: 0;
+
+      &[hidden] {
+        display: none;
+      }
+    }
+
+    .header-profile-name {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: $font-inter;
+      font-size: $label-large;
+      font-weight: $bold;
+      color: $on-primary;
+
+      // Avatar alone on smaller screens; the burger menu shows the full name
+      @media (max-width: 1024px) {
+        display: none;
+      }
+    }
+
+    .header-profile-avatar {
+      display: flex;
+    }
+
     .burger-toggle {
       display: none;
       width: 40px;

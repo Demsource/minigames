@@ -3,6 +3,7 @@ import logoUrl from '../../../assets/icons/logo-minigames.svg';
 import closeUrl from '../../../assets/icons/close.svg';
 import { AuthDialog } from '../../dialogs/auth-dialog';
 import { AppSession } from '../../../services/app-session';
+import { renderProfile } from '../render-profile';
 import {
   endSession,
   getSession,
@@ -41,6 +42,10 @@ export class BurgerMenu {
         <button type="button" class="btn-login" id="burger-login-btn">Log In</button>
         <button type="button" class="btn-signup" id="burger-signup-btn">Sign Up</button>
         <button type="button" class="btn-login btn-logout" id="burger-logout-btn" hidden>Logout</button>
+        <div class="burger-profile" hidden>
+          <span class="burger-profile-name"></span>
+          <span class="burger-profile-avatar"></span>
+        </div>
       </div>
     `;
 
@@ -69,6 +74,15 @@ export class BurgerMenu {
       this.element.querySelector<HTMLButtonElement>('#burger-logout-btn');
     if (logoutButton) {
       logoutButton.hidden = !isSignedIn;
+    }
+    const profile = this.element.querySelector<HTMLElement>('.burger-profile');
+    if (!profile) {
+      return;
+    }
+
+    profile.hidden = !isSignedIn;
+    if (session) {
+      renderProfile(profile, session, 'burger-profile', 'medium');
     }
   }
 

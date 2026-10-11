@@ -122,5 +122,35 @@
       color: $on-primary;
       border: 2px solid $primary;
     }
+
+    .burger-profile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: $size-2;
+      min-width: 0;
+
+      &[hidden] {
+        display: none;
+      }
+    }
+
+    .burger-profile-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: $font-inter;
+      font-size: $body-medium;
+      font-weight: $bold;
+      color: $white;
+    }
+
+    .burger-profile-avatar {
+      display: flex;
+
+      .profile-avatar {
+        border-color: $white;
+      }
+    }
   }
 }

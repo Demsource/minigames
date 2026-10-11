@@ -2,6 +2,7 @@ import logoUrl from '../../assets/icons/logo-minigames.svg';
 import { BurgerMenu } from './burger-menu/burger-menu';
 import { AuthDialog } from '../dialogs/auth-dialog';
 import { AppSession } from '../../services/app-session';
+import { renderProfile } from './render-profile';
 import {
   endSession,
   getSession,
@@ -32,6 +33,10 @@ export function Header(currentRoute: string): HTMLElement {
         <button type="button" class="btn-login" id="login-btn">Log In</button>
         <button type="button" class="btn-signup" id="signup-btn">Sign Up</button>
         <button type="button" class="btn-signup btn-logout" id="logout-btn" hidden>Logout</button>
+        <div class="header-profile" hidden>
+          <span class="header-profile-name"></span>
+          <span class="header-profile-avatar"></span>
+        </div>
 
         <button type="button" class="burger-toggle" aria-label="Open menu">
           <span></span>
@@ -48,6 +53,7 @@ export function Header(currentRoute: string): HTMLElement {
     headerElement.querySelector<HTMLButtonElement>('#signup-btn');
   const logoutButton =
     headerElement.querySelector<HTMLButtonElement>('#logout-btn');
+  const profile = headerElement.querySelector<HTMLElement>('.header-profile');
 
   const applyAuthState = (session: AppSession | undefined) => {
     const isSignedIn = session !== undefined;
@@ -58,6 +64,14 @@ export function Header(currentRoute: string): HTMLElement {
     }
     if (logoutButton) {
       logoutButton.hidden = !isSignedIn;
+    }
+    if (!profile) {
+      return;
+    }
+
+    profile.hidden = !isSignedIn;
+    if (session) {
+      renderProfile(profile, session, 'header-profile', 'medium');
     }
   };
   applyAuthState(getSession());
