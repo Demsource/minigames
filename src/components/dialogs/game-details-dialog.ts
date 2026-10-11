@@ -14,6 +14,8 @@ import {
   getGameDetails,
   postComment,
   toggleGameFavorite,
+  toggleCommentLike,
+  CommentLike,
   GameDetails,
   Comment,
   TopRecord,
@@ -78,6 +80,38 @@ function getCommentErrorMessage(error: unknown): string {
   }
 }
 
+const COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE = 'Please log in to like comments.';
+
+function getCommentLikeErrorMessage(error: unknown): string {
+  if (isUnknownOutcome(error) || !(error instanceof ApiError)) {
+    // Network failure, timeout or 5xx: the like may or may not have applied
+    return "Couldn't confirm your like. Please check and try again.";
+  }
+  switch (error.status) {
+    case 401: {
+      return 'Please log in to like comments.';
+    }
+    case 404: {
+      return 'This comment could not be found.';
+    }
+    case 429: {
+      return error.message;
+    }
+    default: {
+      return "Couldn't update your like. Please try again.";
+    }
+  }
+}
+
+function applyCommentLikePending(
+  button: HTMLButtonElement,
+  isPending: boolean
+) {
+  button.disabled = isPending;
+  button.classList.toggle('is-pending', isPending);
+  button.setAttribute('aria-busy', String(isPending));
+}
+
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
 
@@ -123,6 +157,8 @@ class GameDetailsDialogClass {
   private favoritePendingSlug: string | undefined;
   // Slug of the game whose comment POST is in flight; its form stays locked
   private commentPendingSlug: string | undefined;
+  // Comment ids whose like POST is in flight
+  private pendingCommentLikes = new Set<string>();
   // Commenter name → avatar color variant; reset when the view mounts fresh
   private avatarColors = new Map<string, number>();
 
@@ -131,9 +167,12 @@ class GameDetailsDialogClass {
     this.attachEvents();
     // Sign-in: load the user's favorite state. Logout or expiry: switch any
     // open Game Details to its Guest state.
-    subscribeSession(() => {
+    subscribeSession((session) => {
       this.syncFavoriteWithSession();
       this.updateCommentFormAccess();
+      if (session) {
+        void this.refreshCommentsForSession();
+      }
     });
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
@@ -494,6 +533,11 @@ class GameDetailsDialogClass {
     likeButton.className = 'comment-like-btn';
     likeButton.classList.toggle('is-liked', comment.isLikedByCurrentUser);
     likeButton.dataset.commentId = comment.commentId;
+    // A re-render must not unlock a like that is still being sent
+    applyCommentLikePending(
+      likeButton,
+      this.pendingCommentLikes.has(comment.commentId)
+    );
 
     const likeIcon = document.createElement('img');
     likeIcon.src = heartBlackIcon;
@@ -575,7 +619,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
     for (const button of commentLikeButtons) {
       button.addEventListener('click', () => {
-        this.toggleCommentLike(button);
+        void this.handleCommentLike(button);
       });
     }
 
@@ -598,22 +642,83 @@ class GameDetailsDialogClass {
     textarea.style.height = `${newHeight}px`;
   }
 
-  private toggleCommentLike(button: HTMLButtonElement) {
+  // One POST flips the like; the UI changes only from the server's
+  // response. Never retried: a second POST could undo the first.
+  private async handleCommentLike(button: HTMLButtonElement) {
+    const commentId = button.dataset.commentId;
+    // Ignored while this comment's request is in flight; others stay usable
+    if (!commentId || this.pendingCommentLikes.has(commentId)) {
+      return;
+    }
+
+    const wasGuest = !getSession();
     if (!canPerformProtectedAction()) {
+      // Expiry shows its own Snackbar; a guest gets the warning
+      if (wasGuest) {
+        showSnackbar(COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE);
+      }
+      return;
+    }
+    const email = getSession()?.email;
+    if (!email) {
       return;
     }
 
-    button.classList.toggle('is-liked');
+    const slug = this.currentGameSlug;
+    this.pendingCommentLikes.add(commentId);
+    this.updateCommentLikePending(commentId);
+    try {
+      const { data } = await toggleCommentLike(commentId, email);
+      // Game switched, logout or expiry meanwhile: not for this view (the
+      // guest reset already applies after logout)
+      if (slug === this.currentGameSlug && getSession()?.email === email) {
+        this.applyCommentLike(commentId, data);
+      }
+    } catch (error) {
+      // One message, never retried: a replay could undo the first toggle
+      showSnackbar(getCommentLikeErrorMessage(error));
+    } finally {
+      this.pendingCommentLikes.delete(commentId);
+      this.updateCommentLikePending(commentId);
+    }
+  }
+
+  // Locks the button and shows the loading pulse while its request runs
+  private updateCommentLikePending(commentId: string) {
+    const button = this.findCommentLikeButton(commentId);
+    if (button) {
+      applyCommentLikePending(button, this.pendingCommentLikes.has(commentId));
+    }
+  }
+
+  // Writes the server's like state to the stored comment and its button.
+  // Looked up by id because the list may have re-rendered meanwhile.
+  private applyCommentLike(commentId: string, like: CommentLike) {
+    const comment = this.currentCommentsData.find(
+      (c) => c.commentId === commentId
+    );
+    if (comment) {
+      comment.isLikedByCurrentUser = like.isLikedByCurrentUser;
+      comment.likesCount = like.likesCount;
+    }
+
+    const button = this.findCommentLikeButton(commentId);
+    if (!button) {
+      return;
+    }
+    button.classList.toggle('is-liked', like.isLikedByCurrentUser);
     const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
-    if (!likeCount) {
-      return;
+    if (likeCount) {
+      likeCount.textContent = String(like.likesCount);
     }
+  }
 
-    const currentCount = Number(likeCount.textContent || '0');
-    const isLiked = button.classList.contains('is-liked');
-    likeCount.textContent = isLiked
-      ? (currentCount + 1).toString()
-      : (currentCount - 1).toString();
+  private findCommentLikeButton(
+    commentId: string
+  ): HTMLButtonElement | undefined {
+    const buttons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
+    return [...buttons].find((b) => b.dataset.commentId === commentId);
   }
 
   private calculateTimeAgo(dateString: string): string {
@@ -799,7 +904,7 @@ class GameDetailsDialogClass {
   // like state but keep the public content (and any comment draft) open
   private resetToGuestState() {
     this.setFavoriteView(false);
-    this.resetCommentLikes();
+    this.resetCommentLikes(true);
   }
 
   private setFavoriteView(isFavorited: boolean) {
@@ -1018,7 +1123,9 @@ class GameDetailsDialogClass {
   }
 
   // Un-likes every comment and restores the loaded like counts
-  private resetCommentLikes() {
+  // Applies each comment's server state (isLikedByCurrentUser, likesCount)
+  // to its button. Guest view: nothing is shown as liked.
+  private resetCommentLikes(isGuestView = false) {
     const commentLikeButtons =
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
 
@@ -1028,11 +1135,31 @@ class GameDetailsDialogClass {
       const commentData = this.currentCommentsData.find(
         (c) => c.commentId === commentId
       );
+      if (!commentData) {
+        continue;
+      }
 
-      button.classList.remove('is-liked');
-      if (likeCount && commentData) {
+      button.classList.toggle(
+        'is-liked',
+        !isGuestView && commentData.isLikedByCurrentUser
+      );
+      if (likeCount) {
         likeCount.textContent = commentData.likesCount.toString();
       }
+    }
+  }
+
+  // Sign-in while Game Details is open: reload comments with the user's
+  // email so each like button reflects their own isLikedByCurrentUser
+  private async refreshCommentsForSession() {
+    const email = getSession()?.email;
+    if (!email || !this.currentGameData || this.commentsLoadFailed) {
+      return;
+    }
+    try {
+      await this.refreshComments(this.currentGameSlug, email);
+    } catch {
+      // Keep the current list; the next open loads personalized data
     }
   }
 
@@ -1053,7 +1180,7 @@ class GameDetailsDialogClass {
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
     for (const button of commentLikeButtons) {
       button.addEventListener('click', () => {
-        this.toggleCommentLike(button);
+        void this.handleCommentLike(button);
       });
     }
   }

@@ -458,6 +458,15 @@ $comment-avatar-colors: (
       transition: filter 0.2s ease;
     }
 
+    &.is-pending {
+      cursor: progress;
+      opacity: 0.6;
+
+      .like-icon {
+        animation: favorite-pending-pulse 0.8s ease-in-out infinite;
+      }
+    }
+
     &:hover {
       color: $like;
 
@@ -764,7 +773,8 @@ $comment-avatar-colors: (
 
 @media (prefers-reduced-motion: reduce) {
   .btn-favorite.is-pending .btn-heart-icon,
-  .comment-form.is-pending .submit-icon {
+  .comment-form.is-pending .submit-icon,
+  .comment-like-btn.is-pending .like-icon {
     animation: none;
   }
 }

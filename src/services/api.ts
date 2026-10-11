@@ -192,6 +192,31 @@ export function postComment(
   );
 }
 
+export interface CommentLike {
+  isLikedByCurrentUser: boolean;
+  likesCount: number;
+}
+
+export interface CommentLikeResponse {
+  data: CommentLike;
+}
+
+// Toggles the user's like on a comment: every successful call flips it,
+// so never retry a call whose outcome is unknown
+export function toggleCommentLike(
+  commentId: string,
+  userEmail: string
+): Promise<CommentLikeResponse> {
+  return apiCall<CommentLikeResponse>(
+    `/api/comments/${encodeURIComponent(commentId)}/like`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userEmail }),
+    }
+  );
+}
+
 // Toggles the favorite: every successful call flips the state, so never
 // retry a call whose outcome is unknown
 export function toggleGameFavorite(
