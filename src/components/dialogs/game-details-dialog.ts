@@ -82,6 +82,27 @@ function getCommentErrorMessage(error: unknown): string {
 
 const COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE = 'Please log in to like comments.';
 
+function getCommentLikeErrorMessage(error: unknown): string {
+  if (isUnknownOutcome(error) || !(error instanceof ApiError)) {
+    // Network failure, timeout or 5xx: the like may or may not have applied
+    return "Couldn't confirm your like. Please check and try again.";
+  }
+  switch (error.status) {
+    case 401: {
+      return 'Please log in to like comments.';
+    }
+    case 404: {
+      return 'This comment could not be found.';
+    }
+    case 429: {
+      return error.message;
+    }
+    default: {
+      return "Couldn't update your like. Please try again.";
+    }
+  }
+}
+
 function applyCommentLikePending(
   button: HTMLButtonElement,
   isPending: boolean
@@ -643,13 +664,19 @@ class GameDetailsDialogClass {
       return;
     }
 
+    const slug = this.currentGameSlug;
     this.pendingCommentLikes.add(commentId);
     this.updateCommentLikePending(commentId);
     try {
       const { data } = await toggleCommentLike(commentId, email);
-      this.applyCommentLike(commentId, data);
-    } catch {
-      showSnackbar("Couldn't update your like. Please try again.");
+      // Game switched, logout or expiry meanwhile: not for this view (the
+      // guest reset already applies after logout)
+      if (slug === this.currentGameSlug && getSession()?.email === email) {
+        this.applyCommentLike(commentId, data);
+      }
+    } catch (error) {
+      // One message, never retried: a replay could undo the first toggle
+      showSnackbar(getCommentLikeErrorMessage(error));
     } finally {
       this.pendingCommentLikes.delete(commentId);
       this.updateCommentLikePending(commentId);
