@@ -187,14 +187,19 @@
     transition: all 0.2s;
     font-family: $font-inter;
 
-    &:hover {
+    &:hover:not(:disabled) {
       box-shadow: $level-1;
       transform: translateY(-2px);
     }
 
-    &:active {
+    &:active:not(:disabled) {
       box-shadow: none;
       transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
   }
 

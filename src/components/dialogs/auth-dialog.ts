@@ -32,6 +32,7 @@ class AuthDialogClass {
   // True when the history entry below is the page without the dialog
   private canCloseWithBack: boolean = false;
   private hasSeenUrlWithoutAuth: boolean = false;
+  private currentMode: AuthMode = 'login';
 
   constructor() {
     this.createDOM();
@@ -72,6 +73,7 @@ class AuthDialogClass {
 
   private applyMode(mode: AuthMode) {
     const isRegister = mode === 'register';
+    this.currentMode = mode;
     this.dialog.classList.toggle('view-register', isRegister);
     this.dialog
       .querySelector('#toggle-login')
@@ -79,6 +81,7 @@ class AuthDialogClass {
     this.dialog
       .querySelector('#toggle-register')
       ?.classList.toggle('active', isRegister);
+    this.clearFormState();
   }
 
   private getFieldInput(fieldName: string): HTMLInputElement | null {
@@ -173,6 +176,66 @@ class AuthDialogClass {
     } else {
       this.showError(fieldName, validationResult.error ?? 'Invalid field');
     }
+
+    this.updateSubmitButtonState();
+  }
+
+  private getFieldsForMode(mode: AuthMode): string[] {
+    return mode === 'login'
+      ? ['login-email', 'login-password']
+      : [
+          'register-username',
+          'register-email',
+          'register-password',
+          'register-confirm-password',
+        ];
+  }
+
+  private isFormValid(): boolean {
+    const fields = this.getFieldsForMode(this.currentMode);
+
+    for (const fieldName of fields) {
+      const input = this.getFieldInput(fieldName);
+      const errorElement = this.getErrorElement(fieldName);
+
+      // Field is invalid if: empty, has error class, or has visible error message
+      if (
+        !input ||
+        !input.value.trim() ||
+        input.classList.contains('has-error') ||
+        errorElement?.classList.contains('is-visible')
+      ) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private updateSubmitButtonState() {
+    const view =
+      this.currentMode === 'login' ? '#login-view' : '#register-view';
+    const submitButton = this.dialog.querySelector(
+      `${view} .btn-primary`
+    ) as HTMLButtonElement;
+
+    if (submitButton) {
+      submitButton.disabled = !this.isFormValid();
+    }
+  }
+
+  private clearFormState() {
+    const fields = this.getFieldsForMode(this.currentMode);
+
+    for (const fieldName of fields) {
+      const input = this.getFieldInput(fieldName);
+      if (input) {
+        input.value = '';
+      }
+      this.clearError(fieldName);
+    }
+
+    this.updateSubmitButtonState();
   }
 
   private requestClose() {
@@ -224,7 +287,7 @@ class AuthDialogClass {
         </div>
 
         <a class="forgot-password">Forgot Password?</a>
-        <button class="btn-primary" type="button">Login</button>
+        <button class="btn-primary" type="button" disabled>Login</button>
 
         <div class="divider">OR</div>
         
@@ -277,7 +340,7 @@ class AuthDialogClass {
           <div class="error-message" data-error-for="register-confirm-password"></div>
         </div>
 
-        <button class="btn-primary" type="button" style="margin-top: 16px;">Create Account</button>
+        <button class="btn-primary" type="button" disabled style="margin-top: 16px;">Create Account</button>
 
         <div class="divider">OR</div>
         
