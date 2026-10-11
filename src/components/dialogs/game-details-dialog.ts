@@ -172,8 +172,8 @@ class GameDetailsDialogClass {
             placeholder="Write a comment..."
             rows="1"
           ></textarea>
-          <button type="button" class="comment-submit-btn" aria-label="Submit comment">
-            <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
+          <button type="button" class="comment-submit-btn" aria-label="Submit comment" disabled>
+            <img src="${sendCommentIconDisabled}" alt="" class="submit-icon" />
           </button>
         </div>
         <div class="comments-list"></div>
@@ -331,8 +331,8 @@ class GameDetailsDialogClass {
           placeholder="Write a comment..."
           rows="1"
         ></textarea>
-        <button type="button" class="comment-submit-btn" aria-label="Submit comment">
-          <img src="${sendCommentIconDisabled}" alt="Submit" class="submit-icon" />
+        <button type="button" class="comment-submit-btn" aria-label="Submit comment" disabled>
+          <img src="${sendCommentIconDisabled}" alt="" class="submit-icon" />
         </button>
       </div>
 
@@ -386,36 +386,29 @@ class GameDetailsDialogClass {
       void this.toggleFavorite();
     });
 
-    const textarea =
-      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
-    const submitButton = this.dialog.querySelector<HTMLButtonElement>(
-      '.comment-submit-btn'
-    );
-    const submitIcon =
-      submitButton?.querySelector<HTMLImageElement>('.submit-icon');
+    // Delegated to the dialog: the comment form is re-rendered on every
+    // game load, so listeners on the form itself would be lost
+    this.dialog.addEventListener('input', (event) => {
+      const target = event.target as HTMLElement;
+      if (!target.matches('.comment-textarea')) {
+        return;
+      }
 
-    if (textarea && submitButton && submitIcon) {
-      textarea.addEventListener('input', (event) => {
-        this.autoGrowTextarea(event.target as HTMLTextAreaElement);
-        const hasText = textarea.value.trim().length > 0;
-        submitIcon.src = hasText
-          ? sendCommentIconDefault
-          : sendCommentIconDisabled;
-      });
+      this.autoGrowTextarea(target as HTMLTextAreaElement);
+      this.updateCommentSubmitState();
+    });
 
-      submitButton.addEventListener('mouseenter', () => {
-        if (textarea.value.trim().length > 0) {
-          submitIcon.src = sendCommentIconHover;
-        }
-      });
+    this.dialog.addEventListener('mouseover', (event) => {
+      if ((event.target as HTMLElement).closest('.comment-submit-btn')) {
+        this.updateCommentSubmitState(true);
+      }
+    });
 
-      submitButton.addEventListener('mouseleave', () => {
-        const hasText = textarea.value.trim().length > 0;
-        submitIcon.src = hasText
-          ? sendCommentIconDefault
-          : sendCommentIconDisabled;
-      });
-    }
+    this.dialog.addEventListener('mouseout', (event) => {
+      if ((event.target as HTMLElement).closest('.comment-submit-btn')) {
+        this.updateCommentSubmitState();
+      }
+    });
 
     const commentLikeButtons =
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
@@ -686,21 +679,41 @@ class GameDetailsDialogClass {
     }
   }
 
+  // Empty (or whitespace-only) comment: grey and disabled.
+  // Has text: blue, or the hover variant while the pointer is over it.
+  private updateCommentSubmitState(isHovered = false) {
+    const textarea =
+      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
+    const submitButton = this.dialog.querySelector<HTMLButtonElement>(
+      '.comment-submit-btn'
+    );
+    const submitIcon =
+      submitButton?.querySelector<HTMLImageElement>('.submit-icon');
+    if (!submitButton || !submitIcon) {
+      return;
+    }
+
+    const hasText = (textarea?.value.trim().length ?? 0) > 0;
+    submitButton.disabled = !hasText;
+    if (!hasText) {
+      submitIcon.src = sendCommentIconDisabled;
+    } else if (isHovered) {
+      submitIcon.src = sendCommentIconHover;
+    } else {
+      submitIcon.src = sendCommentIconDefault;
+    }
+  }
+
   private resetCommentState() {
     const textarea =
       this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
-    const submitIcon = this.dialog.querySelector<HTMLImageElement>(
-      ':scope .comment-submit-btn .submit-icon'
-    );
 
     if (textarea) {
       textarea.value = '';
       textarea.style.height = 'auto';
     }
 
-    if (submitIcon) {
-      submitIcon.src = sendCommentIconDisabled;
-    }
+    this.updateCommentSubmitState();
 
     this.resetCommentLikes();
   }
