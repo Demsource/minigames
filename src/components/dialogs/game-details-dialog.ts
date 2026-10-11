@@ -9,13 +9,12 @@ import sendCommentIconDefault from '../../assets/icons/send-comment-trigger-defa
 import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-disabled.svg';
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import {
-  apiCall,
   ApiError,
+  getComments,
   getGameDetails,
   toggleGameFavorite,
   GameDetails,
   Comment,
-  CommentsResponse,
 } from '../../services/api';
 import { SkeletonGameDetailsDialog } from '../../components/skeletons/skeleton-loader-game-details-dialog';
 import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loader-comments';
@@ -336,39 +335,85 @@ class GameDetailsDialogClass {
         </button>
       </div>
 
-      <div class="comments-list">
-        ${
-          this.currentCommentsData.length === 0
-            ? EmptyState({
-                title: 'No comments yet',
-                message: 'Be the first to share your thoughts about this game!',
-                isDismissible: false,
-              }).outerHTML
-            : this.currentCommentsData
-                .map((comment) => {
-                  const timeAgo = this.calculateTimeAgo(comment.createdAt);
-                  const initial = comment.authorName.charAt(0).toUpperCase();
-                  return `
-              <div class="comment-item">
-                <div class="comment-avatar">${initial}</div>
-                <div class="comment-content">
-                  <div class="comment-header">
-                    <span class="comment-author">${comment.authorName}</span>
-                    <span class="comment-time">${timeAgo}</span>
-                  </div>
-                  <p class="comment-text">${comment.text}</p>
-                  <button class="comment-like-btn ${comment.isLikedByCurrentUser ? 'is-liked' : ''}" data-comment-id="${comment.commentId}">
-                    <img src="${heartBlackIcon}" alt="" class="like-icon" />
-                    <span class="like-count">${comment.likesCount}</span>
-                  </button>
-                </div>
-              </div>
-            `;
-                })
-                .join('')
-        }
-      </div>
+      <div class="comments-list"></div>
     `;
+
+    this.renderCommentsList();
+  }
+
+  private renderCommentsList() {
+    const commentsList =
+      this.dialog.querySelector<HTMLElement>('.comments-list');
+    if (!commentsList) {
+      return;
+    }
+
+    if (this.currentCommentsData.length === 0) {
+      commentsList.replaceChildren(
+        EmptyState({
+          title: 'No comments yet',
+          message: 'Be the first to share your thoughts about this game!',
+          isDismissible: false,
+        })
+      );
+      return;
+    }
+
+    commentsList.replaceChildren(
+      ...this.currentCommentsData.map((comment) =>
+        this.createCommentItem(comment)
+      )
+    );
+  }
+
+  // Built with textContent: API values are rendered as text, never as HTML
+  private createCommentItem(comment: Comment): HTMLElement {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'comment-avatar';
+    avatar.textContent = comment.authorName.charAt(0).toUpperCase();
+
+    const content = document.createElement('div');
+    content.className = 'comment-content';
+
+    const header = document.createElement('div');
+    header.className = 'comment-header';
+
+    const author = document.createElement('span');
+    author.className = 'comment-author';
+    author.textContent = comment.authorName;
+
+    const time = document.createElement('span');
+    time.className = 'comment-time';
+    time.textContent = this.calculateTimeAgo(comment.createdAt);
+
+    header.append(author, time);
+
+    const text = document.createElement('p');
+    text.className = 'comment-text';
+    text.textContent = comment.text;
+
+    const likeButton = document.createElement('button');
+    likeButton.type = 'button';
+    likeButton.className = 'comment-like-btn';
+    likeButton.classList.toggle('is-liked', comment.isLikedByCurrentUser);
+    likeButton.dataset.commentId = comment.commentId;
+
+    const likeIcon = document.createElement('img');
+    likeIcon.src = heartBlackIcon;
+    likeIcon.alt = '';
+    likeIcon.className = 'like-icon';
+
+    const likeCount = document.createElement('span');
+    likeCount.className = 'like-count';
+    likeCount.textContent = String(comment.likesCount);
+
+    likeButton.append(likeIcon, likeCount);
+    content.append(header, text, likeButton);
+    item.append(avatar, content);
+    return item;
   }
 
   private attachEvents() {
@@ -814,8 +859,9 @@ class GameDetailsDialogClass {
 
   private async loadComments() {
     try {
-      const response = await apiCall<CommentsResponse>(
-        `/api/games/${this.currentGameSlug}/comments?limit=3&sort=newest`
+      const response = await getComments(
+        this.currentGameSlug,
+        getSession()?.email
       );
       this.currentCommentsData = response.data;
       this.totalCommentsCount = response.meta.totalComments;
