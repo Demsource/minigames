@@ -10,8 +10,8 @@ import sendCommentIconDisabled from '../../assets/icons/send-comment-trigger-dis
 import sendCommentIconHover from '../../assets/icons/send-comment-trigger-hover.svg';
 import {
   apiCall,
+  getGameDetails,
   GameDetails,
-  GameDetailsResponse,
   Comment,
   CommentsResponse,
 } from '../../services/api';
@@ -21,7 +21,7 @@ import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
 import { canPerformProtectedAction } from '../../services/session-guard';
-import { subscribeSession } from '../../services/session-state';
+import { getSession, subscribeSession } from '../../services/session-state';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -43,13 +43,9 @@ class GameDetailsDialogClass {
   constructor() {
     this.createDOM();
     this.attachEvents();
-    // Logout or expiry: switch any open Game Details to its Guest state.
-    // Later, refresh user-specific data from the API here.
-    subscribeSession((session) => {
-      if (!session) {
-        this.resetToGuestState();
-      }
-    });
+    // Sign-in: load the user's favorite state. Logout or expiry: switch any
+    // open Game Details to its Guest state.
+    subscribeSession(() => this.syncFavoriteWithSession());
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
     router.subscribe(({ query }) => {
@@ -209,7 +205,7 @@ class GameDetailsDialogClass {
           </div>
           <div class="likes">
             <img src="${heartIcon}" alt="" class="meta-icon" />
-            <span>${formattedLikes}</span>
+            <span class="likes-count">${formattedLikes}</span>
           </div>
         </div>
       </div>
@@ -543,6 +539,45 @@ class GameDetailsDialogClass {
     this.setFavoriteView(this.currentGameData.isLikedByCurrentUser);
   }
 
+  private syncFavoriteWithSession() {
+    if (getSession()) {
+      void this.refreshFavoriteState();
+    } else {
+      this.resetToGuestState();
+    }
+  }
+
+  // Re-requests the personalized details for the loaded game (e.g. after
+  // signing in through the Auth handoff) and applies the server's state
+  private async refreshFavoriteState() {
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+    if (!email || !this.currentGameData) {
+      return;
+    }
+
+    try {
+      const { data } = await getGameDetails(slug, email);
+      // Ignore if the game or the session changed while waiting
+      if (slug !== this.currentGameSlug || getSession()?.email !== email) {
+        return;
+      }
+      this.currentGameData = data;
+      this.setFavoriteView(data.isLikedByCurrentUser);
+      this.setLikesCount(data.likesCount);
+    } catch {
+      // Keep the current view; the next open loads fresh state
+    }
+  }
+
+  private setLikesCount(count: number) {
+    const likesCount =
+      this.gameInfoContainer.querySelector<HTMLElement>('.likes-count');
+    if (likesCount) {
+      likesCount.textContent = this.formatLikesCount(count);
+    }
+  }
+
   // Guest Mode after logout or expiry: drop user-specific favorite and
   // like state but keep the public content (and any comment draft) open
   private resetToGuestState() {
@@ -698,11 +733,19 @@ class GameDetailsDialogClass {
   }
 
   private async loadGameData() {
+    const slug = this.currentGameSlug;
+    const email = getSession()?.email;
+
     try {
+      // Personalized for signed-in users: isLikedByCurrentUser is theirs
       const [gameResponse] = await Promise.all([
-        apiCall<GameDetailsResponse>(`/api/games/${this.currentGameSlug}`),
+        getGameDetails(slug, email),
         this.loadComments(),
       ]);
+      // Another game was opened while this one was loading
+      if (slug !== this.currentGameSlug) {
+        return;
+      }
       this.renderGameContent(gameResponse.data);
 
       try {
@@ -721,6 +764,11 @@ class GameDetailsDialogClass {
         this.resetCommentState();
       } catch (error) {
         console.error('Error resetting comment state:', error);
+      }
+
+      // Signed in or out while loading: the personal state is outdated
+      if (getSession()?.email !== email) {
+        this.syncFavoriteWithSession();
       }
     } catch (error) {
       console.error('Failed to load game details:', error);
