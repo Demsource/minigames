@@ -807,8 +807,8 @@ class GameDetailsDialogClass {
       this.currentCommentsData = response.data;
       this.totalCommentsCount = response.meta.totalComments;
       this.commentsLoadFailed = false;
-    } catch (error) {
-      console.error('Failed to load comments:', error);
+    } catch {
+      // Shown to the user as the comments error banner with Retry
       this.currentCommentsData = [];
       this.totalCommentsCount = 0;
       this.commentsLoadFailed = true;
@@ -830,31 +830,16 @@ class GameDetailsDialogClass {
         return;
       }
       this.renderGameContent(gameResponse.data);
-
-      try {
-        this.attachGameActionEvents();
-      } catch (error) {
-        console.error('Error attaching game action events:', error);
-      }
-
-      try {
-        this.resetFavoriteState();
-      } catch (error) {
-        console.error('Error resetting favorite state:', error);
-      }
-
-      try {
-        this.resetCommentState();
-      } catch (error) {
-        console.error('Error resetting comment state:', error);
-      }
+      this.attachGameActionEvents();
+      this.resetFavoriteState();
+      this.resetCommentState();
 
       // Signed in or out while loading: the personal state is outdated
       if (getSession()?.email !== email) {
         this.syncFavoriteWithSession();
       }
-    } catch (error) {
-      console.error('Failed to load game details:', error);
+    } catch {
+      // Shown to the user as the dialog error state
       this.showError();
     }
   }
@@ -869,8 +854,8 @@ class GameDetailsDialogClass {
   }
 
   public async open() {
+    // Only reachable through syncWithUrl, which always sets the slug first
     if (!this.currentGameSlug) {
-      console.error('Game slug not set');
       return;
     }
 
