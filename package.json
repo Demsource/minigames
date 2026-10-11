@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "lint": "eslint",
     "format": "prettier --write \"src/**/*.{ts,tsx,scss,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
