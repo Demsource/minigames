@@ -82,6 +82,15 @@ function getCommentErrorMessage(error: unknown): string {
 
 const COMMENT_LIKE_LOGIN_REQUIRED_MESSAGE = 'Please log in to like comments.';
 
+function applyCommentLikePending(
+  button: HTMLButtonElement,
+  isPending: boolean
+) {
+  button.disabled = isPending;
+  button.classList.toggle('is-pending', isPending);
+  button.setAttribute('aria-busy', String(isPending));
+}
+
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
 
@@ -127,6 +136,8 @@ class GameDetailsDialogClass {
   private favoritePendingSlug: string | undefined;
   // Slug of the game whose comment POST is in flight; its form stays locked
   private commentPendingSlug: string | undefined;
+  // Comment ids whose like POST is in flight
+  private pendingCommentLikes = new Set<string>();
   // Commenter name → avatar color variant; reset when the view mounts fresh
   private avatarColors = new Map<string, number>();
 
@@ -501,6 +512,11 @@ class GameDetailsDialogClass {
     likeButton.className = 'comment-like-btn';
     likeButton.classList.toggle('is-liked', comment.isLikedByCurrentUser);
     likeButton.dataset.commentId = comment.commentId;
+    // A re-render must not unlock a like that is still being sent
+    applyCommentLikePending(
+      likeButton,
+      this.pendingCommentLikes.has(comment.commentId)
+    );
 
     const likeIcon = document.createElement('img');
     likeIcon.src = heartBlackIcon;
@@ -609,7 +625,8 @@ class GameDetailsDialogClass {
   // response. Never retried: a second POST could undo the first.
   private async handleCommentLike(button: HTMLButtonElement) {
     const commentId = button.dataset.commentId;
-    if (!commentId) {
+    // Ignored while this comment's request is in flight; others stay usable
+    if (!commentId || this.pendingCommentLikes.has(commentId)) {
       return;
     }
 
@@ -626,11 +643,24 @@ class GameDetailsDialogClass {
       return;
     }
 
+    this.pendingCommentLikes.add(commentId);
+    this.updateCommentLikePending(commentId);
     try {
       const { data } = await toggleCommentLike(commentId, email);
       this.applyCommentLike(commentId, data);
     } catch {
       showSnackbar("Couldn't update your like. Please try again.");
+    } finally {
+      this.pendingCommentLikes.delete(commentId);
+      this.updateCommentLikePending(commentId);
+    }
+  }
+
+  // Locks the button and shows the loading pulse while its request runs
+  private updateCommentLikePending(commentId: string) {
+    const button = this.findCommentLikeButton(commentId);
+    if (button) {
+      applyCommentLikePending(button, this.pendingCommentLikes.has(commentId));
     }
   }
 
