@@ -46,7 +46,8 @@ function renderHeader(currentRoute = '/'): HTMLElement {
 }
 
 function isHidden(header: HTMLElement, selector: string): boolean {
-  return header.querySelector<HTMLElement>(selector)?.hidden ?? false;
+  // `hidden` is typed as boolean | string ('until-found'); only true counts
+  return header.querySelector<HTMLElement>(selector)?.hidden === true;
 }
 
 function click(header: HTMLElement, selector: string): void {

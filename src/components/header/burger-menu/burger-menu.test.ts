@@ -47,7 +47,8 @@ function renderMenu(currentRoute = '/'): HTMLElement {
 }
 
 function isHidden(menu: HTMLElement, selector: string): boolean {
-  return menu.querySelector<HTMLElement>(selector)?.hidden ?? false;
+  // `hidden` is typed as boolean | string ('until-found'); only true counts
+  return menu.querySelector<HTMLElement>(selector)?.hidden === true;
 }
 
 function click(menu: HTMLElement, selector: string): void {
