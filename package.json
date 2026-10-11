@@ -10,9 +10,9 @@
     "lint": "eslint",
     "format": "prettier --write \"src/**/*.{ts,tsx,scss,json,md}\"",
     "prepare": "husky",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
