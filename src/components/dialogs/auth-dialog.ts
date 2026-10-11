@@ -12,7 +12,7 @@ import {
   validateLoginPassword,
   validateConfirmPassword,
 } from './validation';
-import { login, signup } from '../../services/auth';
+import { login, signup, googleSignIn } from '../../services/auth';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 
@@ -428,6 +428,20 @@ class AuthDialogClass {
     loginButton?.addEventListener('click', () => this.handleLogin());
     registerButton?.addEventListener('click', () => this.handleRegister());
 
+    const googleLoginButton = this.dialog.querySelector(
+      ':scope > #login-view .btn-google'
+    ) as HTMLButtonElement;
+    const googleRegisterButton = this.dialog.querySelector(
+      ':scope > #register-view .btn-google'
+    ) as HTMLButtonElement;
+
+    googleLoginButton?.addEventListener('click', () =>
+      this.handleGoogleAuth('login')
+    );
+    googleRegisterButton?.addEventListener('click', () =>
+      this.handleGoogleAuth('register')
+    );
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.isOpen()) {
         this.requestClose();
@@ -530,6 +544,29 @@ class AuthDialogClass {
     const user = auth.currentUser;
     if (user) {
       await updateProfile(user, { displayName: username });
+    }
+
+    this.close();
+  }
+
+  private async handleGoogleAuth(mode: 'login' | 'register') {
+    this.setPending(true, mode);
+
+    const result = await googleSignIn();
+
+    if (!result.success && !result.error) {
+      this.setPending(false, mode);
+      return;
+    }
+
+    if (!result.success) {
+      this.showError(
+        'login-email',
+        result.error || 'Google sign-in failed',
+        false
+      );
+      this.setPending(false, mode);
+      return;
     }
 
     this.close();
