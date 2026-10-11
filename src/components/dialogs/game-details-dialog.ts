@@ -24,7 +24,11 @@ import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
 import { showSnackbar } from '../snackbar/snackbar';
-import { getInitials, getProfileName } from '../../utils/profile';
+import {
+  getFirstInitial,
+  getInitials,
+  getProfileName,
+} from '../../utils/profile';
 import { canPerformProtectedAction } from '../../services/session-guard';
 import { getSession, subscribeSession } from '../../services/session-state';
 
@@ -445,7 +449,7 @@ class GameDetailsDialogClass {
 
     const avatar = document.createElement('div');
     avatar.className = 'comment-avatar';
-    avatar.textContent = comment.authorName.charAt(0).toUpperCase();
+    avatar.textContent = getFirstInitial(comment.authorName);
 
     const content = document.createElement('div');
     content.className = 'comment-content';
