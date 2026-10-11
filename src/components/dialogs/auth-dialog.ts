@@ -16,6 +16,10 @@ import { login, signup, googleSignIn } from '../../services/auth';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../config/firebase';
 import { startSession } from '../../services/session-state';
+import { isSessionActive } from '../../services/session-guard';
+import { showSnackbar } from '../snackbar/snackbar';
+
+const ALREADY_AUTHENTICATED_MESSAGE = 'You are already logged in.';
 
 export type AuthMode = 'login' | 'register';
 
@@ -62,7 +66,16 @@ class AuthDialogClass {
     }
 
     if (!isAuthMode(mode)) {
-      router.setQuery({ auth: undefined }, { replace: true });
+      router.removeQuery('auth');
+      return;
+    }
+
+    // Every entry point (buttons, direct URL, reload, Back/Forward) lands
+    // here. Expired or invalid sessions are recovered to Guest first, so
+    // only a still-valid session blocks Auth.
+    if (!this.isOpen() && isSessionActive()) {
+      router.removeQuery('auth');
+      showSnackbar(ALREADY_AUTHENTICATED_MESSAGE);
       return;
     }
 
