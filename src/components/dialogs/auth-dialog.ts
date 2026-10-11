@@ -12,6 +12,9 @@ import {
   validateLoginPassword,
   validateConfirmPassword,
 } from './validation';
+import { login, signup } from '../../services/auth';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 
 export type AuthMode = 'login' | 'register';
 
@@ -33,6 +36,7 @@ class AuthDialogClass {
   private canCloseWithBack: boolean = false;
   private hasSeenUrlWithoutAuth: boolean = false;
   private currentMode: AuthMode = 'login';
+  private isPending: boolean = false;
 
   constructor() {
     this.createDOM();
@@ -96,11 +100,15 @@ class AuthDialogClass {
     );
   }
 
-  private showError(fieldName: string, errorMessage: string) {
+  private showError(
+    fieldName: string,
+    errorMessage: string,
+    shouldMarkAsInvalid: boolean = true
+  ) {
     const input = this.getFieldInput(fieldName);
     const errorElement = this.getErrorElement(fieldName);
 
-    if (input) {
+    if (input && shouldMarkAsInvalid) {
       input.classList.add('has-error');
     }
 
@@ -196,14 +204,12 @@ class AuthDialogClass {
 
     for (const fieldName of fields) {
       const input = this.getFieldInput(fieldName);
-      const errorElement = this.getErrorElement(fieldName);
 
-      // Field is invalid if: empty, has error class, or has visible error message
+      // Field is invalid if: empty or has validation error class
       if (
         !input ||
         !input.value.trim() ||
-        input.classList.contains('has-error') ||
-        errorElement?.classList.contains('is-visible')
+        input.classList.contains('has-error')
       ) {
         return false;
       }
@@ -216,11 +222,11 @@ class AuthDialogClass {
     const view =
       this.currentMode === 'login' ? '#login-view' : '#register-view';
     const submitButton = this.dialog.querySelector(
-      `${view} .btn-primary`
+      `:scope > ${view} .btn-primary`
     ) as HTMLButtonElement;
 
     if (submitButton) {
-      submitButton.disabled = !this.isFormValid();
+      submitButton.disabled = !this.isFormValid() || this.isPending;
     }
   }
 
@@ -239,7 +245,7 @@ class AuthDialogClass {
   }
 
   private requestClose() {
-    if (!this.isOpen()) {
+    if (!this.isOpen() || this.isPending) {
       return;
     }
 
@@ -374,6 +380,21 @@ class AuthDialogClass {
       input.addEventListener('blur', () => {
         this.validateField(fieldName);
       });
+
+      // Submit form on Enter key
+      input.addEventListener('keydown', (event) => {
+        if ((event as KeyboardEvent).key !== 'Enter') {
+          return;
+        }
+
+        event.preventDefault();
+        const view =
+          this.currentMode === 'login' ? '#login-view' : '#register-view';
+        const submitButton = this.dialog.querySelector(
+          `:scope > ${view} .btn-primary`
+        ) as HTMLButtonElement;
+        submitButton?.click();
+      });
     }
   }
 
@@ -397,6 +418,16 @@ class AuthDialogClass {
     );
     switchRegisterLink?.addEventListener('click', () => switchMode('register'));
 
+    const loginButton = this.dialog.querySelector(
+      ':scope > #login-view .btn-primary'
+    ) as HTMLButtonElement;
+    const registerButton = this.dialog.querySelector(
+      ':scope > #register-view .btn-primary'
+    ) as HTMLButtonElement;
+
+    loginButton?.addEventListener('click', () => this.handleLogin());
+    registerButton?.addEventListener('click', () => this.handleRegister());
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.isOpen()) {
         this.requestClose();
@@ -404,6 +435,104 @@ class AuthDialogClass {
     });
 
     this.attachFieldValidationListeners();
+  }
+
+  private setFormDisabled(isDisabled: boolean) {
+    const inputs = this.dialog.querySelectorAll('input[data-field]');
+    for (const input of inputs) {
+      (input as HTMLInputElement).disabled = isDisabled;
+    }
+  }
+
+  private setPending(isPending: boolean, mode: AuthMode) {
+    this.isPending = isPending;
+    this.setFormDisabled(isPending);
+
+    const view = mode === 'login' ? '#login-view' : '#register-view';
+    const button = this.dialog.querySelector(
+      `:scope > ${view} .btn-primary`
+    ) as HTMLButtonElement;
+
+    if (button) {
+      if (isPending) {
+        button.dataset.originalText = button.textContent || '';
+        button.textContent =
+          mode === 'login' ? 'Logging in...' : 'Creating Account...';
+      } else {
+        button.textContent =
+          button.dataset.originalText ||
+          (mode === 'login' ? 'Login' : 'Create Account');
+      }
+    }
+
+    this.updateSubmitButtonState();
+  }
+
+  private async handleLogin() {
+    this.setPending(true, 'login');
+
+    const emailInput = this.getFieldInput('login-email');
+    const passwordInput = this.getFieldInput('login-password');
+
+    if (!emailInput || !passwordInput) {
+      this.setPending(false, 'login');
+      return;
+    }
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    const result = await login(email, password);
+
+    if (!result.success) {
+      this.clearError('login-email');
+      this.clearError('login-password');
+      this.showError('login-email', result.error || 'Login failed', false);
+      this.setPending(false, 'login');
+      return;
+    }
+
+    this.close();
+  }
+
+  private async handleRegister() {
+    this.setPending(true, 'register');
+
+    const usernameInput = this.getFieldInput('register-username');
+    const emailInput = this.getFieldInput('register-email');
+    const passwordInput = this.getFieldInput('register-password');
+
+    if (!usernameInput || !emailInput || !passwordInput) {
+      this.setPending(false, 'register');
+      return;
+    }
+
+    const username = usernameInput.value;
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    const result = await signup(email, password);
+
+    if (!result.success) {
+      this.clearError('register-username');
+      this.clearError('register-email');
+      this.clearError('register-password');
+      this.clearError('register-confirm-password');
+      this.showError(
+        'register-email',
+        result.error || 'Registration failed',
+        false
+      );
+      this.setPending(false, 'register');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (user) {
+      await updateProfile(user, { displayName: username });
+    }
+
+    this.close();
   }
 
   // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
