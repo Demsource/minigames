@@ -272,6 +272,11 @@
     font-weight: $bold;
     color: $on-primary;
     flex-shrink: 0;
+
+    &.is-guest {
+      background-color: $outline;
+      color: $on-bg-low;
+    }
   }
 
   .comment-textarea {
@@ -295,6 +300,12 @@
     &:focus {
       outline: none;
       border-color: $primary-high;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      border-color: $outline-variant;
+      background-color: $surface-low;
     }
 
     &::-webkit-scrollbar {

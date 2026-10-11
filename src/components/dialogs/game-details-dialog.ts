@@ -23,6 +23,7 @@ import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
 import { showSnackbar } from '../snackbar/snackbar';
+import { getInitials, getProfileName } from '../../utils/profile';
 import { canPerformProtectedAction } from '../../services/session-guard';
 import { getSession, subscribeSession } from '../../services/session-state';
 
@@ -83,7 +84,10 @@ class GameDetailsDialogClass {
     this.attachEvents();
     // Sign-in: load the user's favorite state. Logout or expiry: switch any
     // open Game Details to its Guest state.
-    subscribeSession(() => this.syncFavoriteWithSession());
+    subscribeSession(() => {
+      this.syncFavoriteWithSession();
+      this.updateCommentFormAccess();
+    });
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
     router.subscribe(({ query }) => {
@@ -173,7 +177,7 @@ class GameDetailsDialogClass {
           <h2 class="comments-title">Comments</h2>
         </div>
         <div class="comment-form">
-          <div class="comment-form-avatar">U</div>
+          <div class="comment-form-avatar" aria-hidden="true"></div>
           <textarea
             class="comment-textarea"
             name="comment"
@@ -333,7 +337,7 @@ class GameDetailsDialogClass {
       </div>
 
       <div class="comment-form">
-        <div class="comment-form-avatar">U</div>
+        <div class="comment-form-avatar" aria-hidden="true"></div>
         <textarea
           class="comment-textarea"
           name="comment"
@@ -755,6 +759,34 @@ class GameDetailsDialogClass {
 
   // Empty (or whitespace-only) comment: grey and disabled.
   // Has text: blue, or the hover variant while the pointer is over it.
+  // Guests see a locked form; signed-in users get their initial and input
+  private updateCommentFormAccess() {
+    const session = getSession();
+    const textarea =
+      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
+    const avatar = this.dialog.querySelector<HTMLElement>(
+      '.comment-form-avatar'
+    );
+
+    if (avatar) {
+      // Uppercase first letter of the profile name (Unicode-aware)
+      const initial = session
+        ? ([...getInitials(getProfileName(session))][0] ?? '')
+        : '';
+      avatar.textContent = initial || '?';
+      avatar.classList.toggle('is-guest', !session);
+    }
+
+    if (textarea) {
+      textarea.disabled = !session;
+      textarea.placeholder = session
+        ? 'Write a comment...'
+        : 'Log in to write a comment...';
+    }
+
+    this.updateCommentSubmitState();
+  }
+
   private updateCommentSubmitState(isHovered = false) {
     const textarea =
       this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
@@ -767,7 +799,9 @@ class GameDetailsDialogClass {
       return;
     }
 
-    const hasText = (textarea?.value.trim().length ?? 0) > 0;
+    // Locked textarea (guest) counts as empty: grey and not clickable
+    const hasText =
+      !textarea?.disabled && (textarea?.value.trim().length ?? 0) > 0;
     submitButton.disabled = !hasText;
     if (!hasText) {
       submitIcon.src = sendCommentIconDisabled;
@@ -787,7 +821,7 @@ class GameDetailsDialogClass {
       textarea.style.height = 'auto';
     }
 
-    this.updateCommentSubmitState();
+    this.updateCommentFormAccess();
 
     this.resetCommentLikes();
   }
