@@ -20,6 +20,7 @@ import { SkeletonCommentsSection } from '../../components/skeletons/skeleton-loa
 import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
+import { canPerformProtectedAction } from '../../services/session-guard';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -35,15 +36,22 @@ class GameDetailsDialogClass {
   // True when the history entry below is the page without the dialog
   private canCloseWithBack: boolean = false;
   private hasSeenUrlWithoutGame: boolean = false;
+  // Hidden behind the Auth dialog with its content and state preserved
+  private isSuspended: boolean = false;
 
   constructor() {
     this.createDOM();
     this.attachEvents();
-    // Auth dialog wins when both `auth` and `game` are in the URL
+    // Auth dialog wins when both `auth` and `game` are in the URL; an open
+    // Game Details is suspended rather than closed so it can be restored
     router.subscribe(({ query }) => {
       const authMode = query.get('auth');
-      const gameSlug = query.get('game');
-      this.syncWithUrl(authMode ? undefined : (gameSlug ?? undefined));
+      const gameSlug = query.get('game') ?? undefined;
+      if (authMode && gameSlug) {
+        this.suspend();
+        return;
+      }
+      this.syncWithUrl(gameSlug);
     });
   }
 
@@ -51,8 +59,26 @@ class GameDetailsDialogClass {
     return this.backdrop.classList.contains('is-open');
   }
 
+  // Hides the dialog so only Auth is active, keeping its state for resume
+  private suspend() {
+    if (!this.isOpen()) {
+      return;
+    }
+    this.isSuspended = true;
+    this.backdrop.classList.remove('is-open');
+  }
+
   // The `game` query param is the source of truth for the dialog
   private syncWithUrl(slug: string | undefined) {
+    if (this.isSuspended) {
+      this.isSuspended = false;
+      if (slug === this.currentGameSlug) {
+        this.backdrop.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        return;
+      }
+    }
+
     if (slug) {
       if (!this.isOpen() || slug !== this.currentGameSlug) {
         // A deep link has no dialog-less entry below it to go back to
@@ -382,6 +408,10 @@ class GameDetailsDialogClass {
   }
 
   private toggleCommentLike(button: HTMLButtonElement) {
+    if (!canPerformProtectedAction()) {
+      return;
+    }
+
     button.classList.toggle('is-liked');
     const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
     if (!likeCount) {
@@ -434,6 +464,10 @@ class GameDetailsDialogClass {
   }
 
   private toggleFavorite(button: HTMLButtonElement) {
+    if (!canPerformProtectedAction()) {
+      return;
+    }
+
     this.isLiked = !this.isLiked;
     button.classList.toggle('is-favorited');
     const textSpan = button.querySelector('.btn-text');

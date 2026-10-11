@@ -23,6 +23,18 @@ export function isSessionActive(): boolean {
   return false;
 }
 
+// Call before every protected action (favorite, comment, like) and skip the
+// request when it returns false. Without an active session the Auth dialog
+// opens on top of the current URL; an open Game Details is suspended and
+// restored when Auth closes. The blocked action is not repeated.
+export function canPerformProtectedAction(): boolean {
+  if (isSessionActive()) {
+    return true;
+  }
+  router.setQuery({ auth: 'login' });
+  return false;
+}
+
 const expiryTimer: { id?: number } = {};
 
 // Schedules the expiry check for the exact moment the session ends, so an
