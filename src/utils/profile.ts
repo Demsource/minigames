@@ -16,6 +16,13 @@ export function getProfileName({ displayName, email }: ProfileSource): string {
   );
 }
 
+// First non-whitespace character, uppercased. Array.from keeps characters
+// outside the BMP (e.g. emoji) whole. '?' when the name is blank.
+export function getFirstInitial(name: string): string {
+  const [first] = [...name.trim()];
+  return first ? first.toLocaleUpperCase() : '?';
+}
+
 // First letter or digit of the first one or two words, uppercased.
 // Returns '' when none is found so the caller shows the generic avatar.
 export function getInitials(name: string): string {
