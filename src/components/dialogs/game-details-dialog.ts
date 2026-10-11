@@ -40,6 +40,38 @@ const COMMENT_MAX_LENGTH = 500;
 const AUTHOR_NAME_MIN_LENGTH = 2;
 const AUTHOR_NAME_MAX_LENGTH = 30;
 
+const COMMENT_UNKNOWN_OUTCOME_MESSAGE =
+  "We couldn't confirm your comment was posted. Check the comments before trying again.";
+
+// 4xx: the server definitively rejected it, so no comment exists and a
+// retry is safe. Network failures, timeouts and 5xx: the comment may or
+// may not exist, so the user is told the result is unknown.
+function isUnknownOutcome(error: unknown): boolean {
+  return !(error instanceof ApiError) || error.status >= 500;
+}
+
+function getCommentErrorMessage(error: unknown): string {
+  if (!(error instanceof ApiError) || isUnknownOutcome(error)) {
+    return COMMENT_UNKNOWN_OUTCOME_MESSAGE;
+  }
+  switch (error.status) {
+    case 401: {
+      return 'Please log in to post a comment.';
+    }
+    case 404: {
+      return 'This game could not be found.';
+    }
+    case 400:
+    case 429: {
+      // e.g. validation details or "Rate limit exceeded. Try again in 42 seconds"
+      return error.message;
+    }
+    default: {
+      return "Your comment wasn't posted. Please try again.";
+    }
+  }
+}
+
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
 
@@ -869,11 +901,15 @@ class GameDetailsDialogClass {
     this.updateCommentFormAccess();
     try {
       await postComment(slug, { userEmail: email, authorName, text });
-    } catch {
-      // Not created or outcome unknown: keep the text. Detailed handling
-      // per failure type comes with the failure-recovery step.
-      showSnackbar("Couldn't post your comment. Please try again.");
+    } catch (error) {
+      // Either way the typed text is kept and the form unlocks; nothing is
+      // resubmitted automatically
+      showSnackbar(getCommentErrorMessage(error));
       this.unlockCommentForm(slug);
+      if (isUnknownOutcome(error)) {
+        // A safe GET (not a re-POST) so the user can see if it went through
+        void this.refreshComments(slug, email).catch(() => {});
+      }
       return;
     }
 
