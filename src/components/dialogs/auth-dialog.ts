@@ -380,6 +380,21 @@ class AuthDialogClass {
       input.addEventListener('blur', () => {
         this.validateField(fieldName);
       });
+
+      // Submit form on Enter key
+      input.addEventListener('keydown', (event) => {
+        if ((event as KeyboardEvent).key !== 'Enter') {
+          return;
+        }
+
+        event.preventDefault();
+        const view =
+          this.currentMode === 'login' ? '#login-view' : '#register-view';
+        const submitButton = this.dialog.querySelector(
+          `:scope > ${view} .btn-primary`
+        ) as HTMLButtonElement;
+        submitButton?.click();
+      });
     }
   }
 
