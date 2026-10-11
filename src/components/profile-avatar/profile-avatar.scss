@@ -1,0 +1,53 @@
+@use '../../styles/tokens' as *;
+
+$avatar-colors: (
+  1: $avatar-random-1,
+  2: $avatar-random-2,
+  3: $avatar-random-3,
+  4: $avatar-random-4,
+  5: $avatar-random-5,
+);
+
+.profile-avatar {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: $corner-full;
+  border: 2px solid $on-primary;
+  color: $on-primary;
+  font-family: $font-inter;
+  font-weight: $bold;
+  line-height: 1;
+  user-select: none;
+
+  &--small {
+    width: 32px;
+    height: 32px;
+    font-size: $label-medium;
+  }
+
+  &--medium {
+    width: 40px;
+    height: 40px;
+    font-size: $label-large;
+  }
+
+  @each $variant, $color in $avatar-colors {
+    &--color-#{$variant} {
+      background-color: $color;
+    }
+  }
+
+  .profile-avatar-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .profile-avatar-icon {
+    width: 60%;
+    height: 60%;
+  }
+}
