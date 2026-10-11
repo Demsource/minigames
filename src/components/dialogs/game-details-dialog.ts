@@ -21,6 +21,7 @@ import { ErrorBanner } from '../../components/error-banner/error-banner';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { router } from '../../app/router';
 import { canPerformProtectedAction } from '../../services/session-guard';
+import { subscribeSession } from '../../services/session-state';
 
 class GameDetailsDialogClass {
   private backdrop!: HTMLElement;
@@ -42,6 +43,13 @@ class GameDetailsDialogClass {
   constructor() {
     this.createDOM();
     this.attachEvents();
+    // Logout or expiry: switch any open Game Details to its Guest state.
+    // Later, refresh user-specific data from the API here.
+    subscribeSession((session) => {
+      if (!session) {
+        this.resetToGuestState();
+      }
+    });
     // Auth dialog wins when both `auth` and `game` are in the URL; an open
     // Game Details is suspended rather than closed so it can be restored
     router.subscribe(({ query }) => {
@@ -532,7 +540,18 @@ class GameDetailsDialogClass {
       return;
     }
 
-    this.isLiked = this.currentGameData.isLikedByCurrentUser;
+    this.setFavoriteView(this.currentGameData.isLikedByCurrentUser);
+  }
+
+  // Guest Mode after logout or expiry: drop user-specific favorite and
+  // like state but keep the public content (and any comment draft) open
+  private resetToGuestState() {
+    this.setFavoriteView(false);
+    this.resetCommentLikes();
+  }
+
+  private setFavoriteView(isFavorited: boolean) {
+    this.isLiked = isFavorited;
     const favoriteButton =
       this.dialog.querySelector<HTMLButtonElement>('.btn-favorite');
 
@@ -555,8 +574,6 @@ class GameDetailsDialogClass {
     const submitIcon = this.dialog.querySelector<HTMLImageElement>(
       ':scope .comment-submit-btn .submit-icon'
     );
-    const commentLikeButtons =
-      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
 
     if (textarea) {
       textarea.value = '';
@@ -566,6 +583,14 @@ class GameDetailsDialogClass {
     if (submitIcon) {
       submitIcon.src = sendCommentIconDisabled;
     }
+
+    this.resetCommentLikes();
+  }
+
+  // Un-likes every comment and restores the loaded like counts
+  private resetCommentLikes() {
+    const commentLikeButtons =
+      this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
 
     for (const button of commentLikeButtons) {
       const likeCount = button.querySelector<HTMLSpanElement>('.like-count');
