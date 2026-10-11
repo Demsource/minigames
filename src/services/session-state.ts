@@ -59,7 +59,11 @@ export async function endSession(): Promise<AuthResult> {
   return logout();
 }
 
-export type SessionInitResult = 'restored' | 'guest' | 'expired' | 'invalid';
+export interface SessionInitResult {
+  status: 'restored' | 'guest' | 'expired' | 'invalid';
+  // Result of the Firebase signOut run when no usable session exists
+  signOut: AuthResult;
+}
 
 // Runs once on startup. Only a valid, unexpired stored session restores the
 // authenticated UI; Firebase's persisted currentUser alone never does.
@@ -68,16 +72,20 @@ export async function initSession(): Promise<SessionInitResult> {
 
   if (result.status === 'valid') {
     restoreSession(result.session);
-    return 'restored';
+    return { status: 'restored', signOut: { success: true } };
   }
 
   // No usable app session: also sign out of Firebase so its persisted
-  // identity is dropped. Errors are swallowed so startup never crashes.
+  // identity is dropped. Errors never crash startup; Guest Mode continues.
+  let signOut: AuthResult;
   try {
-    await endSession();
+    signOut = await endSession();
   } catch {
-    // Guest Mode continues regardless.
+    signOut = { success: false };
   }
 
-  return result.status === 'none' ? 'guest' : result.status;
+  return {
+    status: result.status === 'none' ? 'guest' : result.status,
+    signOut,
+  };
 }
