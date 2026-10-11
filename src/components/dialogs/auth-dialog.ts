@@ -15,6 +15,7 @@ import {
 import { login, signup, googleSignIn } from '../../services/auth';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../config/firebase';
+import { startSession } from '../../services/session-state';
 
 export type AuthMode = 'login' | 'register';
 
@@ -506,6 +507,7 @@ class AuthDialogClass {
       return;
     }
 
+    this.startSessionForCurrentUser();
     this.close();
   }
 
@@ -546,6 +548,7 @@ class AuthDialogClass {
       await updateProfile(user, { displayName: username });
     }
 
+    this.startSessionForCurrentUser();
     this.close();
   }
 
@@ -569,7 +572,16 @@ class AuthDialogClass {
       return;
     }
 
+    this.startSessionForCurrentUser();
     this.close();
+  }
+
+  // Session is saved after any profile update so displayName is current
+  private startSessionForCurrentUser() {
+    const user = auth.currentUser;
+    if (user) {
+      startSession(user);
+    }
   }
 
   // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
