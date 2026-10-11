@@ -12,6 +12,9 @@ import {
   validateLoginPassword,
   validateConfirmPassword,
 } from './validation';
+import { login, signup } from '../../services/auth';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 
 export type AuthMode = 'login' | 'register';
 
@@ -397,6 +400,16 @@ class AuthDialogClass {
     );
     switchRegisterLink?.addEventListener('click', () => switchMode('register'));
 
+    const loginButton = this.dialog.querySelector(
+      ':scope > #login-view .btn-primary'
+    ) as HTMLButtonElement;
+    const registerButton = this.dialog.querySelector(
+      ':scope > #register-view .btn-primary'
+    ) as HTMLButtonElement;
+
+    loginButton?.addEventListener('click', () => this.handleLogin());
+    registerButton?.addEventListener('click', () => this.handleRegister());
+
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.isOpen()) {
         this.requestClose();
@@ -404,6 +417,51 @@ class AuthDialogClass {
     });
 
     this.attachFieldValidationListeners();
+  }
+
+  private async handleLogin() {
+    const emailInput = this.getFieldInput('login-email');
+    const passwordInput = this.getFieldInput('login-password');
+
+    if (!emailInput || !passwordInput) return;
+
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    const result = await login(email, password);
+
+    if (!result.success) {
+      this.showError('login-email', result.error || 'Login failed');
+      return;
+    }
+
+    this.close();
+  }
+
+  private async handleRegister() {
+    const usernameInput = this.getFieldInput('register-username');
+    const emailInput = this.getFieldInput('register-email');
+    const passwordInput = this.getFieldInput('register-password');
+
+    if (!usernameInput || !emailInput || !passwordInput) return;
+
+    const username = usernameInput.value;
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    const result = await signup(email, password);
+
+    if (!result.success) {
+      this.showError('register-email', result.error || 'Registration failed');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (user) {
+      await updateProfile(user, { displayName: username });
+    }
+
+    this.close();
   }
 
   // Opens the dialog by pushing `?auth=<mode>`; the URL listener does the rest
