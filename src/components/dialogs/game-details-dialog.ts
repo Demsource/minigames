@@ -12,6 +12,7 @@ import {
   ApiError,
   getComments,
   getGameDetails,
+  postComment,
   toggleGameFavorite,
   GameDetails,
   Comment,
@@ -34,6 +35,10 @@ function setText(root: ParentNode, selector: string, value: string) {
     element.textContent = value;
   }
 }
+
+const COMMENT_MAX_LENGTH = 500;
+const AUTHOR_NAME_MIN_LENGTH = 2;
+const AUTHOR_NAME_MAX_LENGTH = 30;
 
 const FAVORITES_LOGIN_REQUIRED_MESSAGE =
   'Please log in to add games to your favorites.';
@@ -78,6 +83,8 @@ class GameDetailsDialogClass {
   // Slug of the game whose favorite POST is in flight; that game's button
   // stays locked until it settles, other games are unaffected
   private favoritePendingSlug: string | undefined;
+  // Slug of the game whose comment POST is in flight; its form stays locked
+  private commentPendingSlug: string | undefined;
 
   constructor() {
     this.createDOM();
@@ -182,7 +189,7 @@ class GameDetailsDialogClass {
             class="comment-textarea"
             name="comment"
             placeholder="Write a comment..."
-            rows="1"
+            rows="1" maxlength="500"
           ></textarea>
           <button type="button" class="comment-submit-btn" aria-label="Submit comment" disabled>
             <img src="${sendCommentIconDisabled}" alt="" class="submit-icon" />
@@ -342,7 +349,7 @@ class GameDetailsDialogClass {
           class="comment-textarea"
           name="comment"
           placeholder="Write a comment..."
-          rows="1"
+          rows="1" maxlength="500"
         ></textarea>
         <button type="button" class="comment-submit-btn" aria-label="Submit comment" disabled>
           <img src="${sendCommentIconDisabled}" alt="" class="submit-icon" />
@@ -474,6 +481,28 @@ class GameDetailsDialogClass {
 
       this.autoGrowTextarea(target as HTMLTextAreaElement);
       this.updateCommentSubmitState();
+    });
+
+    // Enter submits, Shift+Enter inserts a new line. Skipped while an IME
+    // is composing so confirming a character doesn't send the comment.
+    this.dialog.addEventListener('keydown', (event) => {
+      const target = event.target as HTMLElement;
+      if (
+        event.key !== 'Enter' ||
+        event.shiftKey ||
+        event.isComposing ||
+        !target.matches('.comment-textarea')
+      ) {
+        return;
+      }
+      event.preventDefault();
+      void this.submitComment();
+    });
+
+    this.dialog.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('.comment-submit-btn')) {
+        void this.submitComment();
+      }
     });
 
     this.dialog.addEventListener('mouseover', (event) => {
@@ -777,14 +806,118 @@ class GameDetailsDialogClass {
       avatar.classList.toggle('is-guest', !session);
     }
 
+    const isPending = this.isCommentPending();
     if (textarea) {
-      textarea.disabled = !session;
+      // Locked for guests and while this game's comment is being sent
+      textarea.disabled = !session || isPending;
       textarea.placeholder = session
         ? 'Write a comment...'
         : 'Log in to write a comment...';
     }
 
+    const form = this.dialog.querySelector<HTMLElement>('.comment-form');
+    form?.classList.toggle('is-pending', isPending);
+    form?.setAttribute('aria-busy', String(isPending));
+
     this.updateCommentSubmitState();
+  }
+
+  private isCommentPending(): boolean {
+    return this.commentPendingSlug === this.currentGameSlug;
+  }
+
+  // Posts the comment, then reloads the latest comments and the count from
+  // the server. Never resubmitted automatically.
+  private async submitComment() {
+    if (this.isCommentPending()) {
+      return;
+    }
+
+    const textarea =
+      this.dialog.querySelector<HTMLTextAreaElement>('.comment-textarea');
+    const text = textarea?.value.trim() ?? '';
+    if (!text) {
+      return;
+    }
+    if (text.length > COMMENT_MAX_LENGTH) {
+      showSnackbar(
+        `Comments can be at most ${COMMENT_MAX_LENGTH} characters long.`
+      );
+      return;
+    }
+
+    if (!canPerformProtectedAction()) {
+      return;
+    }
+    const session = getSession();
+    if (!session) {
+      return;
+    }
+
+    const authorName = getProfileName(session).slice(0, AUTHOR_NAME_MAX_LENGTH);
+    if (authorName.length < AUTHOR_NAME_MIN_LENGTH) {
+      showSnackbar(
+        `Your profile name must be at least ${AUTHOR_NAME_MIN_LENGTH} characters to comment.`
+      );
+      return;
+    }
+
+    const slug = this.currentGameSlug;
+    const { email } = session;
+
+    this.commentPendingSlug = slug;
+    this.updateCommentFormAccess();
+    try {
+      await postComment(slug, { userEmail: email, authorName, text });
+    } catch {
+      // Not created or outcome unknown: keep the text. Detailed handling
+      // per failure type comes with the failure-recovery step.
+      showSnackbar("Couldn't post your comment. Please try again.");
+      this.unlockCommentForm(slug);
+      return;
+    }
+
+    // Created (201): clear the draft if the user is still on this game
+    if (slug === this.currentGameSlug && textarea?.isConnected) {
+      textarea.value = '';
+      textarea.style.height = 'auto';
+    }
+    this.unlockCommentForm(slug);
+
+    try {
+      await this.refreshComments(slug, email);
+    } catch {
+      showSnackbar(
+        'Your comment was posted, but the comments could not be refreshed.'
+      );
+    }
+  }
+
+  private unlockCommentForm(slug: string) {
+    if (this.commentPendingSlug === slug) {
+      this.commentPendingSlug = undefined;
+    }
+    this.updateCommentFormAccess();
+  }
+
+  // Latest 3 comments plus meta.totalComments for the heading
+  private async refreshComments(slug: string, email: string) {
+    const response = await getComments(slug, email);
+    if (slug !== this.currentGameSlug || getSession()?.email !== email) {
+      return;
+    }
+
+    this.currentCommentsData = response.data;
+    this.totalCommentsCount = response.meta.totalComments;
+    this.commentsLoadFailed = false;
+
+    setText(
+      this.dialog,
+      '.comments-title',
+      `Comments (${this.totalCommentsCount})`
+    );
+    this.renderCommentsList();
+    this.attachCommentLikeEvents();
   }
 
   private updateCommentSubmitState(isHovered = false) {
@@ -853,6 +986,11 @@ class GameDetailsDialogClass {
       void this.toggleFavorite();
     });
 
+    this.attachCommentLikeEvents();
+  }
+
+  // Separate so a comments-only refresh doesn't re-bind the favorite button
+  private attachCommentLikeEvents() {
     const commentLikeButtons =
       this.dialog.querySelectorAll<HTMLButtonElement>('.comment-like-btn');
     for (const button of commentLikeButtons) {

@@ -315,6 +315,18 @@
     scrollbar-width: none;
   }
 
+  // Sending: textarea and button are disabled; show progress, not "blocked"
+  .comment-form.is-pending {
+    .comment-textarea,
+    .comment-submit-btn {
+      cursor: progress;
+    }
+
+    .submit-icon {
+      animation: comment-pending-pulse 0.8s ease-in-out infinite;
+    }
+  }
+
   .comment-submit-btn {
     min-width: $size-5;
     min-height: $size-5;
@@ -724,8 +736,20 @@
   }
 }
 
+@keyframes comment-pending-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .btn-favorite.is-pending .btn-heart-icon {
+  .btn-favorite.is-pending .btn-heart-icon,
+  .comment-form.is-pending .submit-icon {
     animation: none;
   }
 }
