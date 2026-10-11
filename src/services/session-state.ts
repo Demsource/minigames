@@ -1,5 +1,10 @@
 import { User } from 'firebase/auth';
-import { AppSession, clearSession, saveSession } from './app-session';
+import {
+  AppSession,
+  clearSession,
+  readSession,
+  saveSession,
+} from './app-session';
 import { logout } from './auth';
 
 type SessionListener = (session: AppSession | undefined) => void;
@@ -50,4 +55,27 @@ export async function endSession(): Promise<void> {
     notify();
   }
   await logout();
+}
+
+export type SessionInitResult = 'restored' | 'guest' | 'expired' | 'invalid';
+
+// Runs once on startup. Only a valid, unexpired stored session restores the
+// authenticated UI; Firebase's persisted currentUser alone never does.
+export async function initSession(): Promise<SessionInitResult> {
+  const result = readSession();
+
+  if (result.status === 'valid') {
+    restoreSession(result.session);
+    return 'restored';
+  }
+
+  // No usable app session: also sign out of Firebase so its persisted
+  // identity is dropped. Errors are swallowed so startup never crashes.
+  try {
+    await endSession();
+  } catch {
+    // Guest Mode continues regardless.
+  }
+
+  return result.status === 'none' ? 'guest' : result.status;
 }
